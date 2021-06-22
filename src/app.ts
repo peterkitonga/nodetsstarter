@@ -1,13 +1,12 @@
-// require('dotenv-expand')(require('dotenv').config());
-
-import path from 'path';
 import express, { NextFunction, Request, Response } from 'express';
+
+import { public_path } from './utils/path';
 
 const app = express();
 const port = process.env.APP_PORT;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(public_path()));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
