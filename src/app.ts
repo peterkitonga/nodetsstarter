@@ -30,7 +30,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     
     if (status === 'success') {
         app.listen(port);
+        console.log(message);
+    } else {
+        console.log(message);
+        process.exit(1);
     }
-    
-    console.log(message);
 })();
