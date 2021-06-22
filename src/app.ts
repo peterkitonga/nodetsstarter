@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 
 import { public_path } from './utils/path';
+import { mongoConnect } from './configs/database';
 
 const app = express();
 const port = process.env.APP_PORT;
@@ -24,5 +25,12 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     res.status(500).json({ message: err.message });
 });
 
-// mount the nodejs app to a port
-app.listen(port);
+(async () => {
+    const { status, message } = await mongoConnect();
+    
+    if (status === 'success') {
+        app.listen(port);
+    }
+    
+    console.log(message);
+})();
