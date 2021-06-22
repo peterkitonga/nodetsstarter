@@ -11,6 +11,8 @@
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^4.17.12",
+    "@types/jsonwebtoken": "^8.5.2",
+    "@types/mongoose": "^5.11.97",
     "@types/node": "^15.12.4",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
     "nodemon-webpack-plugin": "^4.5.2",
@@ -26,6 +28,7 @@
     "dotenv": "^8.6.0",
     "dotenv-expand": "^5.1.0",
     "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.12.14",
     "reflect-metadata": "^0.1.13"
   }
