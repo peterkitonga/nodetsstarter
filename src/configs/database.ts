@@ -8,8 +8,6 @@ const MONGO_DATABASE = process.env.MONGO_DATABASE;
 
 const mongodbUri = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}/${MONGO_DATABASE}?retryWrites=true&w=majority`;
 
-
-
 export const mongoConnect = (): Promise<ConnectionResponse> => {
     return new Promise((resolve, reject) => {
         connect(mongodbUri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
