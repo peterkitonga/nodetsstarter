@@ -8,10 +8,10 @@ export const public_path = (filepath?: string): string => {
     }
 };
 
-export const config_path = (filepath?: string): string => {
+export const storage_path = (filepath?: string): string => {
     if (filepath !== undefined) {
-        return path.join(__dirname, 'config', filepath);
+        return path.join(__dirname, 'storage', filepath);
     } else {
-        return path.join(__dirname, 'config');
+        return path.join(__dirname, 'storage');
     }
 };
