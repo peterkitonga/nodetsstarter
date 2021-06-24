@@ -1,6 +1,6 @@
 # NodeTS Starter
 
-This starter template was created to serve as a starting template for a node.js API built with Express and TypeScript.
+This starter was created to serve as a starting template for a Node.js APIs built with Express and TypeScript.
 
 ## Features
 
@@ -8,6 +8,17 @@ This starter template was created to serve as a starting template for a node.js 
 - [Express](https://expressjs.com/) - Micro-framework for setting up routes, middlewares, controllers.
 - [Nodemailer](https://nodemailer.com/) - For all your mailing needs.
 - [Mongoose](https://mongoosejs.com/) - ODM for connection to and querying of [MongoDB](https://www.mongodb.com/) collections.
+
+## Roadmap
+- [x] Database connection with mongoose
+- [ ] Mailing service with node mailer
+- [ ] Error handling
+- [ ] Logging for errors
+- [ ] Dependency injection for the service layer
+- [ ] API validation logic (express validator)
+- [ ] Unit tests with mocha, chai
+- [ ] Continuous integration with TravisCI
+- [ ] Docker setup with docker-compose
 
 ## Environment Variables
 
