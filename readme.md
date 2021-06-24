@@ -2,7 +2,6 @@
 
 This starter template was created to serve as a starting template for a node.js API built with Express and TypeScript.
 
-
 ## Features
 
 - [TypeScript](https://www.typescriptlang.org/) - for type safety and other awesome features not native to vanilla JavaScript.
@@ -18,7 +17,9 @@ To begin using the starter project, first copy the example variables into a .env
 
 ```APP_BASE_URL```
 
-```MONGO_PROVIDER``` - local or atlas
+```MONGO_PROVIDER``` - local or atlas([MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
+
+```MONGO_HOST``` - if atlas, pass the domain provided after the ```@``` symbol when you click on ```connect``` > ```Connect your application```
 
 Other configurations to change are all listed in the created .env file.
   
@@ -50,6 +51,12 @@ Start the server
 
   
 ## Deployment
+
+Install dependencies first
+
+```bash
+  npm install
+```
 
 To deploy this project in production, run
 
