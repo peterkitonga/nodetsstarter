@@ -10,7 +10,6 @@ This starter template was created to serve as a starting template for a node.js 
 - [Nodemailer](https://nodemailer.com/) - For all your mailing needs.
 - [Mongoose](https://mongoosejs.com/) - ODM for connection to and querying of [MongoDB](https://www.mongodb.com/) collections.
 
-  
 ## Environment Variables
 
 To begin using the starter project, first copy the example variables into a .env file ```cp .env.example .env```. You will need to modify the following environment variables in your .env file for your app to run:
@@ -18,6 +17,8 @@ To begin using the starter project, first copy the example variables into a .env
 ```APP_PORT```
 
 ```APP_BASE_URL```
+
+```MONGO_PROVIDER``` - local or atlas
 
 Other configurations to change are all listed in the created .env file.
   
@@ -56,7 +57,8 @@ To deploy this project in production, run
   npm run build
 ```
 
-This will bundle all your code into a single minified file using webpack. To configure wepack to your liking please visit the [webpack documentation](https://webpack.js.org/configuration).
+This will bundle all your code into a single minified file using webpack. To configure webpack to your liking please visit the [webpack documentation](https://webpack.js.org/configuration).
+
 ## Running Tests
 
 Tests are written in Mocha, Chai under the ```tests``` directory and uses ```istanbul``` for coverage reports. To run tests, run the following command
@@ -68,6 +70,6 @@ Tests are written in Mocha, Chai under the ```tests``` directory and uses ```ist
   
 ## Authors
 
-- [@PeterKitonga](https://www.github.com/PeterKitonga)
+[@PeterKitonga](https://www.github.com/PeterKitonga)
 
   
