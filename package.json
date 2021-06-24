@@ -5,7 +5,9 @@
   "main": "app.js",
   "scripts": {
     "serve": "webpack --watch --node-env development",
-    "build": "webpack --node-env production"
+    "build": "webpack --node-env production",
+    "lint": "eslint src/**/*.ts",
+    "format": "eslint src/**/*.ts --fix"
   },
   "author": "Peter Kitonga",
   "license": "ISC",
@@ -14,8 +16,13 @@
     "@types/jsonwebtoken": "^8.5.2",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^15.12.4",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "eslint": "^7.29.0",
+    "husky": "^6.0.0",
     "nodemon-webpack-plugin": "^4.5.2",
+    "prettier": "^2.3.1",
     "ts-loader": "^9.2.3",
     "typescript": "^4.3.2",
     "webpack": "^5.38.1",
@@ -31,5 +38,10 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.12.14",
     "reflect-metadata": "^0.1.13"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint"
+    }
   }
 }
