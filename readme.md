@@ -10,6 +10,7 @@ This starter was created to serve as a starting template for a Node.js APIs buil
 - [Mongoose](https://mongoosejs.com/) - ODM for connection to and querying of [MongoDB](https://www.mongodb.com/) collections.
 
 ## Roadmap
+
 - [x] Database connection with mongoose
 - [x] Linting with eslint and prettier
 - [ ] Mailing service with node mailer
@@ -23,18 +24,18 @@ This starter was created to serve as a starting template for a Node.js APIs buil
 
 ## Environment Variables
 
-To begin using the starter project, first copy the example variables into a .env file ```cp .env.example .env```. You will need to modify the following environment variables in your .env file for your app to run:
+To begin using the starter project, first copy the example variables into a .env file `cp .env.example .env`. You will need to modify the following environment variables in your .env file for your app to run:
 
-```APP_PORT```
+`APP_PORT`
 
-```APP_BASE_URL```
+`APP_BASE_URL`
 
-```MONGO_PROVIDER``` - local or atlas([MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
+`MONGO_PROVIDER` - local or atlas([MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
 
-```MONGO_HOST``` - if atlas, pass the domain provided after the ```@``` symbol when you click on ```connect``` > ```Connect your application```
+`MONGO_HOST` - if atlas, pass the domain provided after the `@` symbol when you click on `connect` > `Connect your application`
 
 Other configurations to change are all listed in the created .env file.
-  
+
 ## Run Locally
 
 Clone the project
@@ -61,7 +62,6 @@ Start the server
   npm run serve
 ```
 
-  
 ## Deployment
 
 Install dependencies first
@@ -80,15 +80,12 @@ This will bundle all your code into a single minified file using webpack. To con
 
 ## Running Tests
 
-Tests are written in Mocha, Chai under the ```tests``` directory and uses ```istanbul``` for coverage reports. To run tests, run the following command
+Tests are written in Mocha, Chai under the `tests` directory and uses `istanbul` for coverage reports. To run tests, run the following command
 
 ```bash
   npm run test
 ```
 
-  
 ## Authors
 
 [@PeterKitonga](https://www.github.com/PeterKitonga)
-
-  
