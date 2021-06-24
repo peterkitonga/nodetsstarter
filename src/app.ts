@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
 
-import { public_path } from './utils/path';
+import { publicPath } from './utils/path';
 import { mongoConnect } from './configs/database';
 import { CustomError } from './interfaces/errors';
 
@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.APP_PORT;
 
 app.use(express.json());
-app.use(express.static(public_path()));
+app.use(express.static(publicPath()));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
