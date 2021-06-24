@@ -18,11 +18,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-app.get('/', (req: Request, res: Response, next: NextFunction) => {
+app.get('/', (req: Request, res: Response) => {
   res.status(200).json({ message: `Hello There! Running at: ${process.env.APP_BASE_URL}` });
 });
 
-app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
+app.use((err: CustomError, req: Request, res: Response) => {
   const { status_code, message, data } = err;
   const code = status_code || 500;
 
