@@ -11,6 +11,7 @@ This starter was created to serve as a starting template for a Node.js APIs buil
 
 ## Roadmap
 - [x] Database connection with mongoose
+- [x] Linting with eslint and prettier
 - [ ] Mailing service with node mailer
 - [ ] Error handling
 - [ ] Logging for errors
