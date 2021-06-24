@@ -1,6 +1,6 @@
 # NodeTS Starter
 
-This starter was created to serve as a starting template for a Node.js APIs built with Express and TypeScript.
+This starter was created to serve as a starting template for a Node.js API built with Express and TypeScript.
 
 ## Features
 
