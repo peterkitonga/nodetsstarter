@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import express, { NextFunction, Request, Response } from 'express';
 
 import { publicPath } from './utils/path';
-import { mongoConnect } from './configs/database';
+import { mongoConnect } from './loaders/mongoose';
 import { CustomError } from './interfaces/errors';
 
 const app = express();
