@@ -8,7 +8,7 @@ export const logger = winston.createLogger({
     new winston.transports.Console({ level: 'error' }),
     new winston.transports.File({
       filename: 'combined.log',
-      level: configs.logging.level
-    })
-  ]
+      level: configs.logging.level,
+    }),
+  ],
 });
