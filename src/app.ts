@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response, Application } from 'express';
 
 import configs from './configs';
 import { publicPath } from './utils/path';
+import { logger } from './loaders/winston';
 import { mongoConnect } from './loaders/mongoose';
 import { CustomError } from './interfaces/errors';
 
@@ -31,13 +32,17 @@ app.use((err: CustomError, req: Request, res: Response) => {
 });
 
 (async () => {
-  const { status, message } = await mongoConnect();
+  try {
+    const { status, message } = await mongoConnect();
 
-  if (status === 'success') {
-    app.listen(configs.app.port);
-    console.log(message);
-  } else {
-    console.log(message);
-    process.exit(1);
+    if (status === 'success') {
+      logger.info(message);
+      app.listen(configs.app.port);
+    } else {
+      logger.error(message);
+      process.exit(1);
+    }
+  } catch (err) {
+    logger.error(err.message);
   }
 })();
