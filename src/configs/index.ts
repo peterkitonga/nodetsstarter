@@ -1,5 +1,6 @@
 import { access, constants } from 'fs';
 
+import app from './app';
 import logging from './logging';
 import database from './database';
 
@@ -11,6 +12,7 @@ access(envPath, constants.F_OK, (err) => {
 });
 
 export default {
+  app,
   database,
   logging,
 };
