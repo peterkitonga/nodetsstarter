@@ -30,6 +30,12 @@ To begin using the starter project, first copy the example variables into a .env
 
 `APP_BASE_URL`
 
+`APP_LOG_LEVEL`
+
+`APP_LOCALE`
+
+`APP_TIMEZONE`
+
 `MONGO_PROVIDER` - local or atlas([MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
 
 `MONGO_HOST` - if atlas, pass the domain provided after the `@` symbol when you click on `connect` > `Connect your application`
