@@ -1,12 +1,12 @@
 import 'reflect-metadata';
-import express, { NextFunction, Request, Response } from 'express';
+import express, { NextFunction, Request, Response, Application } from 'express';
 
+import configs from './configs';
 import { publicPath } from './utils/path';
 import { mongoConnect } from './loaders/mongoose';
 import { CustomError } from './interfaces/errors';
 
-const app = express();
-const port = process.env.APP_PORT;
+const app: Application = express();
 
 app.use(express.json());
 app.use(express.static(publicPath()));
@@ -34,7 +34,7 @@ app.use((err: CustomError, req: Request, res: Response) => {
   const { status, message } = await mongoConnect();
 
   if (status === 'success') {
-    app.listen(port);
+    app.listen(configs.app.port);
     console.log(message);
   } else {
     console.log(message);
