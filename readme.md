@@ -15,7 +15,7 @@ This starter was created to serve as a starting template for a Node.js API built
 - [x] Linting with eslint and prettier
 - [ ] Mailing service with node mailer
 - [ ] Error handling
-- [ ] Logging for errors
+- [x] Logging for errors
 - [ ] Dependency injection for the service layer
 - [ ] API validation logic (express validator)
 - [ ] Unit tests with mocha, chai
