@@ -7,7 +7,7 @@
     "serve": "webpack --watch --node-env development",
     "build": "webpack --node-env production",
     "lint": "eslint src/**/*.ts",
-    "format": "eslint src/**/*.ts --fix"
+    "lint:format": "eslint src/**/*.ts --fix"
   },
   "author": "Peter Kitonga",
   "license": "ISC",
@@ -20,6 +20,8 @@
     "@typescript-eslint/parser": "^4.28.0",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
     "eslint": "^7.29.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
     "husky": "^6.0.0",
     "nodemon-webpack-plugin": "^4.5.2",
     "prettier": "^2.3.1",
@@ -42,7 +44,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run lint"
+      "pre-commit": "npm run lint:format"
     }
   }
 }
