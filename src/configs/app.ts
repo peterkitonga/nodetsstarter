@@ -1,5 +1,6 @@
 export default {
-  port: process.env.APP_PORT,
+  name: process.env.APP_NAME,
+  port: Number(process.env.APP_PORT),
   base: process.env.APP_BASE_URL,
   api: {
     version: 'v1',
