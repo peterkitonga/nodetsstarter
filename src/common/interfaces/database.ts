@@ -1,10 +1,5 @@
 import { Document } from 'mongoose';
 
-export interface ConnectionResponse {
-  status: string;
-  message: string;
-}
-
 export interface UserModel extends Document {
   name: string;
   email: string;
