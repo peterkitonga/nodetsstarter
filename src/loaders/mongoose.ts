@@ -1,7 +1,7 @@
 import { connect } from 'mongoose';
 
 import configs from '../configs';
-import { ConnectionResponse } from '../interfaces/database';
+import { ConnectionResponse } from '../common/interfaces/database';
 
 export default class MongooseConnect {
   private static instance: MongooseConnect;

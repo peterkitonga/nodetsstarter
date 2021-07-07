@@ -7,7 +7,7 @@ import configs from '../configs';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
 import { publicPath } from '../utils/path';
-import { CustomError } from '../interfaces/errors';
+import { CustomError } from '../common/interfaces/errors';
 
 export default class ExpressApp {
   private static instance: ExpressApp;
@@ -33,7 +33,7 @@ export default class ExpressApp {
     return this.instance;
   }
 
-  private async listen() {
+  private async listen(): Promise<void> {
     try {
       const { status, message } = await MongooseConnect.init().connect();
 

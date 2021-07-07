@@ -2,7 +2,7 @@ import { relative, dirname } from 'path';
 import { unlink, symlink, createWriteStream } from 'fs';
 
 import { storagePath } from '../utils/path';
-import { CustomResponse } from '../interfaces/responses';
+import { CustomResponse } from '../common/interfaces/responses';
 
 export const storeLocalFile = (filename: string): Promise<CustomResponse> => {
   const filepath = storagePath(`app/public/${filename}`);
