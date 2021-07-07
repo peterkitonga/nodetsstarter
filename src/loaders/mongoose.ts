@@ -1,7 +1,7 @@
 import { connect } from 'mongoose';
 
 import configs from '../configs';
-import { ConnectionResponse } from '../common/interfaces/database';
+import { CustomResponse } from '../common/interfaces/responses';
 
 export default class MongooseConnect {
   private static instance: MongooseConnect;
@@ -19,7 +19,7 @@ export default class MongooseConnect {
     return this.instance;
   }
 
-  public connect(): Promise<ConnectionResponse> {
+  public connect(): Promise<CustomResponse> {
     return new Promise((resolve, reject) => {
       connect(this.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
         .then(() => resolve({ status: 'success', message: 'MONGO CONNECTED!' }))

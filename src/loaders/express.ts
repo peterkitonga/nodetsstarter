@@ -38,10 +38,10 @@ export default class ExpressApp {
       const { status, message } = await MongooseConnect.init().connect();
 
       if (status === 'success') {
-        WinstonLogger.init().info(message);
+        WinstonLogger.init().info(message!);
         this.app.listen(this.port);
       } else {
-        WinstonLogger.init().error(message);
+        WinstonLogger.init().error(message!);
         process.exit(1);
       }
     } catch (err) {
