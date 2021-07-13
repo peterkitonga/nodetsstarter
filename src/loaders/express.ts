@@ -35,17 +35,17 @@ export default class ExpressApp {
 
   private async listen(): Promise<void> {
     try {
-      const { status, message } = await MongooseConnect.init().connect();
+      const { status, message } = await MongooseConnect.connect();
 
       if (status === 'success') {
-        WinstonLogger.init().info(message!);
+        WinstonLogger.info(message!);
         this.app.listen(this.port);
       } else {
-        WinstonLogger.init().error(message!);
+        WinstonLogger.error(message!);
         process.exit(1);
       }
     } catch (err) {
-      WinstonLogger.init().error(err.message);
+      WinstonLogger.error(err.message);
     }
   }
 
@@ -73,6 +73,8 @@ export default class ExpressApp {
     this.app.use((err: CustomError, req: Request, res: Response) => {
       const { status_code, message, data } = err;
       const code = status_code || 500;
+
+      WinstonLogger.error(message);
 
       res.status(code).json({ status: 'error', message, data });
     });
