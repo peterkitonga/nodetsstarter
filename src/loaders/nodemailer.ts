@@ -45,7 +45,7 @@ export default class Mailer {
           reject({ status: 'error', message: err.message });
         } else {
           const mail_options: SendMailOptions = {
-            from: `"${process.env.MAIL_FROM_NAME}" ${process.env.MAIL_FROM_ADDRESS}`, // sender address (who sends)
+            from: `"${configs.mail.from.name}" ${configs.mail.from.address}`, // sender address (who sends)
             to: receiver, // list of receivers (who receives)
             subject: subject, // subject line
             html: data, // html body
