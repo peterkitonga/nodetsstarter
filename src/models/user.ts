@@ -8,8 +8,7 @@ const schema = new Schema<UserModel>(
     password: { type: String, required: true },
     salt: String,
     avatar: String,
-    activation_code: String,
-    activated: Boolean,
+    is_activated: Boolean,
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

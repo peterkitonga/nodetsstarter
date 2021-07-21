@@ -6,6 +6,5 @@ export interface UserModel extends Document {
   password: string;
   salt: string;
   avatar?: string;
-  activation_code?: string;
-  activated?: boolean;
+  is_activated?: boolean;
 }
