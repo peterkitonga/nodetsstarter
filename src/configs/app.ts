@@ -10,4 +10,10 @@ export default {
   },
   locale: process.env.APP_LOCALE,
   timezone: process.env.APP_TIMEZONE,
+  auth: {
+    jwt: {
+      secret: process.env.JWT_SECRET ?? 'somesupersecret',
+      expiration: '1h',
+    },
+  },
 };
