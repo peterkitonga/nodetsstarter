@@ -2,9 +2,9 @@ import { relative, dirname } from 'path';
 import { unlink, symlink, createWriteStream } from 'fs';
 
 import { storagePath } from '../utils/path';
-import { CustomResponse } from '../common/interfaces/responses';
+import { ResultResponse } from '../common/interfaces/responses';
 
-export const storeLocalFile = (filename: string): Promise<CustomResponse> => {
+export const storeLocalFile = (filename: string): Promise<ResultResponse<string>> => {
   const filepath = storagePath(`app/public/${filename}`);
 
   return new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ export const storeLocalFile = (filename: string): Promise<CustomResponse> => {
   });
 };
 
-export const deleteLocalFile = (filename: string): Promise<CustomResponse> => {
+export const deleteLocalFile = (filename: string): Promise<ResultResponse<string>> => {
   const filepath = storagePath(`app/public/${filename}`);
 
   return new Promise((resolve, reject) => {

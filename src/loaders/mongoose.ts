@@ -1,14 +1,14 @@
 import { connect } from 'mongoose';
 
 import configs from '../configs';
-import { CustomResponse } from '../common/interfaces/responses';
+import { ResultResponse } from '../common/interfaces/responses';
 
 export default class MongooseConnect {
   public constructor() {
     // constructor
   }
 
-  public static connect(): Promise<CustomResponse> {
+  public static connect(): Promise<ResultResponse<null>> {
     return new Promise((resolve, reject) => {
       connect(configs.database.uri(), { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
         .then(() => resolve({ status: 'success', message: 'MONGO CONNECTED!' }))
