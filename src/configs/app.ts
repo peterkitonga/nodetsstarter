@@ -13,7 +13,7 @@ export default {
   auth: {
     jwt: {
       secret: process.env.JWT_SECRET ?? 'somesupersecret',
-      expiration: '1h',
+      lifetime: process.env.JWT_LIFETIME ?? '1h',
     },
   },
 };
