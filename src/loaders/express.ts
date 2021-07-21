@@ -37,14 +37,25 @@ export default class ExpressApp {
     try {
       const server = this.app.listen(configs.app.port);
       const { message } = await MongooseConnect.connect();
+      const gracefulShutdown = () => {
+        return server.close(async () => {
+          const { message } = await MongooseConnect.disconnect();
+          WinstonLogger.info('Server shutdown successfully!');
+          WinstonLogger.info(message!);
+        });
+      };
 
+      WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
       WinstonLogger.info(message!);
 
       process.on('SIGTERM', () => {
         WinstonLogger.info('Starting graceful shutdown of server...');
-        server.close(function () {
-          WinstonLogger.info('Server shutdown successfully!');
-        });
+        gracefulShutdown();
+      });
+
+      process.on('SIGINT', () => {
+        WinstonLogger.info('Exiting server process cleanly...');
+        gracefulShutdown();
       });
     } catch (err) {
       WinstonLogger.error(err.message);
