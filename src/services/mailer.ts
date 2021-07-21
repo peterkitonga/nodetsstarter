@@ -1,7 +1,4 @@
-import crypto from 'crypto';
-
 import configs from '../configs';
-import User from '../models/user';
 import Mailer from '../loaders/nodemailer';
 import { ResultResponse } from '../common/interfaces/responses';
 
