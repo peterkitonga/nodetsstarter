@@ -4,27 +4,27 @@ import configs from '../configs';
 import { storagePath } from '../utils/path';
 
 export default class WinstonLogger {
-  private static instance: WinstonLogger;
-  private level: string = configs.logging.level;
-  private logger: Logger;
+  private static logger: Logger = createLogger({
+    level: configs.logging.level,
+    format: format.combine(
+      format.timestamp({
+        format: 'YYYY-MM-DD HH:mm:ss',
+      }),
+      format.errors({ stack: true }),
+      format.splat(),
+      format.json(),
+    ),
+    transports: [
+      new transports.File({ filename: storagePath('logs/error.log'), level: 'error' }),
+      new transports.File({ filename: storagePath('logs/combined.log') }),
+    ],
+  });
 
-  private constructor() {
-    this.logger = createLogger({
-      level: this.level,
-      format: format.combine(
-        format.timestamp({
-          format: 'YYYY-MM-DD HH:mm:ss',
-        }),
-        format.errors({ stack: true }),
-        format.splat(),
-        format.json(),
-      ),
-      transports: [
-        new transports.File({ filename: storagePath('logs/error.log'), level: 'error' }),
-        new transports.File({ filename: storagePath('logs/combined.log') }),
-      ],
-    });
+  public constructor() {
+    // constructor
+  }
 
+  private static checkProduction() {
     if (process.env.NODE_ENV !== 'production') {
       this.logger.add(
         new transports.Console({
@@ -34,19 +34,13 @@ export default class WinstonLogger {
     }
   }
 
-  public static init(): WinstonLogger {
-    if (!this.instance) {
-      this.instance = new WinstonLogger();
-    }
-
-    return this.instance;
-  }
-
-  public info(message: string): void {
+  public static info(message: string): void {
+    this.checkProduction();
     this.logger.info(message);
   }
 
-  public error(message: string): void {
+  public static error(message: string): void {
+    this.checkProduction();
     this.logger.error(message);
   }
 }

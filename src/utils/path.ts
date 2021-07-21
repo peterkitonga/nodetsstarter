@@ -15,3 +15,11 @@ export const storagePath = (filepath?: string): string => {
     return path.join(__dirname, '../storage');
   }
 };
+
+export const viewPath = (filepath?: string): string => {
+  if (filepath !== undefined) {
+    return path.join(__dirname, '../views', filepath);
+  } else {
+    return path.join(__dirname, '../views');
+  }
+};

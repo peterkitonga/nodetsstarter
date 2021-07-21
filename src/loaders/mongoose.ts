@@ -1,28 +1,26 @@
-import { connect } from 'mongoose';
+import { connect, connection } from 'mongoose';
 
 import configs from '../configs';
-import { ConnectionResponse } from '../interfaces/database';
+import { ResultResponse } from '../common/interfaces/responses';
 
 export default class MongooseConnect {
-  private static instance: MongooseConnect;
-  private uri: string;
-
-  private constructor() {
-    this.uri = configs.database.uri();
+  public constructor() {
+    // constructor
   }
 
-  public static init(): MongooseConnect {
-    if (!this.instance) {
-      this.instance = new MongooseConnect();
-    }
-
-    return this.instance;
-  }
-
-  public connect(): Promise<ConnectionResponse> {
+  public static connect(): Promise<ResultResponse<null>> {
     return new Promise((resolve, reject) => {
-      connect(this.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
+      connect(configs.database.uri(), { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
         .then(() => resolve({ status: 'success', message: 'MONGO CONNECTED!' }))
+        .catch((err) => reject({ status: 'error', message: err.message }));
+    });
+  }
+
+  public static disconnect(): Promise<ResultResponse<null>> {
+    return new Promise((resolve, reject) => {
+      connection
+        .close(false)
+        .then(() => resolve({ status: 'success', message: 'MONGO DISCONNECTED!' }))
         .catch((err) => reject({ status: 'error', message: err.message }));
     });
   }

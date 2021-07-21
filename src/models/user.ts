@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { UserModel } from '../interfaces/database';
+import { UserModel } from '../common/interfaces/database';
 
 const schema = new Schema<UserModel>(
   {
@@ -8,8 +8,7 @@ const schema = new Schema<UserModel>(
     password: { type: String, required: true },
     salt: String,
     avatar: String,
-    activation_code: String,
-    activated: Boolean,
+    is_activated: Boolean,
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

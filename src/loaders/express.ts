@@ -1,18 +1,17 @@
 import 'reflect-metadata';
 
 import cors from 'cors';
-import express, { Request, Response, Application, json } from 'express';
+import express, { Request, Response, NextFunction, Application, json } from 'express';
 
 import configs from '../configs';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
 import { publicPath } from '../utils/path';
-import { CustomError } from '../interfaces/errors';
+import { CustomError } from '../common/interfaces/errors';
 
 export default class ExpressApp {
   private static instance: ExpressApp;
   private app: Application = express();
-  private port: number = configs.app.port;
 
   private constructor() {
     this.setupBodyParser();
@@ -21,6 +20,7 @@ export default class ExpressApp {
     this.setupCors();
 
     this.handleHomeRoute();
+    this.handleNonExistingRoute();
     this.handleErrorMiddleware();
     this.listen();
   }
@@ -33,19 +33,32 @@ export default class ExpressApp {
     return this.instance;
   }
 
-  private async listen() {
+  private async listen(): Promise<void> {
     try {
-      const { status, message } = await MongooseConnect.init().connect();
+      const server = this.app.listen(configs.app.port);
+      const { message } = await MongooseConnect.connect();
+      const gracefulShutdown = () => {
+        return server.close(async () => {
+          const { message } = await MongooseConnect.disconnect();
+          WinstonLogger.info('Server shutdown successfully!');
+          WinstonLogger.info(message!);
+        });
+      };
 
-      if (status === 'success') {
-        WinstonLogger.init().info(message);
-        this.app.listen(this.port);
-      } else {
-        WinstonLogger.init().error(message);
-        process.exit(1);
-      }
+      WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
+      WinstonLogger.info(message!);
+
+      process.on('SIGTERM', () => {
+        WinstonLogger.info('Starting graceful shutdown of server...');
+        gracefulShutdown();
+      });
+
+      process.on('SIGINT', () => {
+        WinstonLogger.info('Exiting server process cleanly...');
+        gracefulShutdown();
+      });
     } catch (err) {
-      WinstonLogger.init().error(err.message);
+      WinstonLogger.error(err.message);
     }
   }
 
@@ -69,10 +82,21 @@ export default class ExpressApp {
     });
   }
 
+  private handleNonExistingRoute(): void {
+    this.app.use((req: Request, res: Response) => {
+      res.status(404).json({
+        status: 'error',
+        message: `Route: '${req.path}' not found`,
+      });
+    });
+  }
+
   private handleErrorMiddleware(): void {
-    this.app.use((err: CustomError, req: Request, res: Response) => {
+    this.app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
       const { status_code, message, data } = err;
       const code = status_code || 500;
+
+      WinstonLogger.error(message);
 
       res.status(code).json({ status: 'error', message, data });
     });
