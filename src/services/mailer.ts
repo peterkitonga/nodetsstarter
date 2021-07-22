@@ -20,7 +20,7 @@ export default class MailerService {
 
       return sendMail;
     } catch (err) {
-      return { status: 'error', message: err.message };
+      throw err;
     }
   }
 
@@ -35,7 +35,7 @@ export default class MailerService {
 
       return sendMail;
     } catch (err) {
-      return { status: 'error', message: err.message };
+      throw err;
     }
   }
 }
