@@ -16,7 +16,9 @@ export default class WinstonLogger {
     ),
     transports: [
       new transports.File({ filename: storagePath('logs/error.log'), level: 'error' }),
-      new transports.File({ filename: storagePath('logs/combined.log') }),
+      process.env.NODE_ENV !== 'production'
+        ? new transports.Console({ format: format.combine(format.colorize(), format.simple()) })
+        : new transports.File({ filename: storagePath('logs/combined.log') }),
     ],
   });
 
@@ -24,23 +26,11 @@ export default class WinstonLogger {
     // constructor
   }
 
-  private static checkProduction() {
-    if (process.env.NODE_ENV !== 'production') {
-      this.logger.add(
-        new transports.Console({
-          format: format.combine(format.colorize(), format.simple()),
-        }),
-      );
-    }
-  }
-
   public static info(message: string): void {
-    this.checkProduction();
     this.logger.info(message);
   }
 
   public static error(message: string): void {
-    this.checkProduction();
     this.logger.error(message);
   }
 }
