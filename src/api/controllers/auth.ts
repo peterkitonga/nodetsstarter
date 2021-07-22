@@ -27,7 +27,7 @@ export default class AuthController {
 
       res.status(201).json({
         status: 'success',
-        message: `Successfully registered user '${request.name}' with email '${request.email}'`,
+        message: `Successfully registered. Please check your email '${request.email}' for the verification link`,
       });
     } catch (err) {
       if (!err.statusCode) {
