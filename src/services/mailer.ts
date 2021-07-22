@@ -3,14 +3,16 @@ import Mailer from '../loaders/nodemailer';
 import { ResultResponse } from '../common/interfaces/responses';
 
 export default class MailerService {
-  public constructor() {
-    //
+  private email: string;
+
+  public constructor(email: string) {
+    this.email = email;
   }
 
-  public async sendWelcomeEmail(email: string, code: string): Promise<ResultResponse<null>> {
+  public async sendWelcomeEmail(code: string): Promise<ResultResponse<null>> {
     try {
       const sendMail = await Mailer.send(
-        email,
+        this.email,
         `Welcome to ${configs.app.name}`,
         { message: 'Thank you for registering with us. Please click the link below to verify your account.', code },
         'welcome',
@@ -22,10 +24,10 @@ export default class MailerService {
     }
   }
 
-  public async sendResetPasswordEmail(email: string, token: string): Promise<ResultResponse<null>> {
+  public async sendResetPasswordEmail(token: string): Promise<ResultResponse<null>> {
     try {
       const sendMail = await Mailer.send(
-        email,
+        this.email,
         `${configs.app.name} reset password`,
         { message: 'Thank you for registering with us. Please click the link below to verify your account.', token },
         'reset',
