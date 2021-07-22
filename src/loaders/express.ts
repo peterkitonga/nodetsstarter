@@ -4,10 +4,11 @@ import cors from 'cors';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
 import configs from '../configs';
+import routes from '../api/routes';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
 import { publicPath } from '../utils/path';
-import { CustomError } from '../common/interfaces/errors';
+import BaseError from '../common/errors/base';
 
 export default class ExpressApp {
   private static instance: ExpressApp;
@@ -20,6 +21,7 @@ export default class ExpressApp {
     this.setupCors();
 
     this.handleHomeRoute();
+    this.handleAppRoutes();
     this.handleNonExistingRoute();
     this.handleErrorMiddleware();
     this.listen();
@@ -82,6 +84,10 @@ export default class ExpressApp {
     });
   }
 
+  private handleAppRoutes(): void {
+    this.app.use(configs.app.api.prefix(), routes());
+  }
+
   private handleNonExistingRoute(): void {
     this.app.use((req: Request, res: Response) => {
       res.status(404).json({
@@ -92,9 +98,9 @@ export default class ExpressApp {
   }
 
   private handleErrorMiddleware(): void {
-    this.app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
-      const { status_code, message, data } = err;
-      const code = status_code || 500;
+    this.app.use((err: BaseError, req: Request, res: Response, next: NextFunction) => {
+      const { statusCode, message, data } = err;
+      const code = statusCode || 500;
 
       WinstonLogger.error(message);
 

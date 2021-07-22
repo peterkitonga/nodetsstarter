@@ -6,7 +6,10 @@ import configs from '../configs';
 import User from '../models/user';
 import { UserModel } from '../common/interfaces/database';
 import { AuthRequest } from '../common/interfaces/requests';
-import { ResultResponse } from '../common/interfaces/responses';
+import { ResultResponse, TokenResponse } from '../common/interfaces/responses';
+
+import NotFoundError from '../common/errors/not-found';
+import UnauthorizedError from '../common/errors/unauthorized';
 
 export default class UserService {
   public constructor() {
@@ -24,32 +27,37 @@ export default class UserService {
 
       return { status: 'success', data: result };
     } catch (err) {
-      return { status: 'error', message: err.message };
+      throw err;
     }
   }
 
-  public async authenticateUser({ email, password }: AuthRequest): Promise<ResultResponse<string>> {
+  public async authenticateUser({ email, password }: AuthRequest): Promise<ResultResponse<TokenResponse>> {
     try {
       const user = await User.findOne({ email });
-      const isMatched = await bcrypt.compare(password, user!.password);
 
-      if (isMatched) {
-        const token = jwt.sign(
-          {
-            auth: user!._id.toString(),
-            email,
-            salt: user!.salt,
-          },
-          configs.app.auth.jwt.secret,
-          { expiresIn: configs.app.auth.jwt.lifetime },
-        );
+      if (user) {
+        const isMatched = await bcrypt.compare(password, user.password);
 
-        return { status: 'success', data: token };
+        if (isMatched) {
+          const token = jwt.sign(
+            {
+              auth: user._id.toString(),
+              email,
+              salt: user.salt,
+            },
+            configs.app.auth.jwt.secret,
+            { expiresIn: configs.app.auth.jwt.lifetime },
+          );
+
+          return { status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime, auth: user } };
+        } else {
+          throw new UnauthorizedError('Unauthorised. User password entered is incorrect.');
+        }
       } else {
-        return { status: 'error', message: 'Unauthorised. User password entered is incorrect.' };
+        throw new NotFoundError(`Unauthorised. User with email '${email}' does not exist.`);
       }
     } catch (err) {
-      return { status: 'error', message: err.message };
+      throw err;
     }
   }
 }
