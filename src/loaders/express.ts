@@ -7,7 +7,7 @@ import configs from '../configs';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
 import { publicPath } from '../utils/path';
-import { CustomError } from '../common/interfaces/errors';
+import BaseError from '../common/errors/base';
 
 export default class ExpressApp {
   private static instance: ExpressApp;
@@ -92,9 +92,9 @@ export default class ExpressApp {
   }
 
   private handleErrorMiddleware(): void {
-    this.app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
-      const { status_code, message, data } = err;
-      const code = status_code || 500;
+    this.app.use((err: BaseError, req: Request, res: Response, next: NextFunction) => {
+      const { statusCode, message, data } = err;
+      const code = statusCode || 500;
 
       WinstonLogger.error(message);
 
