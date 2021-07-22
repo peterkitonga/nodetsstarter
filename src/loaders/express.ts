@@ -4,6 +4,7 @@ import cors from 'cors';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
 import configs from '../configs';
+import routes from '../api/routes';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
 import { publicPath } from '../utils/path';
@@ -20,6 +21,7 @@ export default class ExpressApp {
     this.setupCors();
 
     this.handleHomeRoute();
+    this.handleAppRoutes();
     this.handleNonExistingRoute();
     this.handleErrorMiddleware();
     this.listen();
@@ -80,6 +82,10 @@ export default class ExpressApp {
         .status(200)
         .json({ message: `Hello There! Welcome to ${configs.app.name}`, version: configs.app.api.version });
     });
+  }
+
+  private handleAppRoutes(): void {
+    this.app.use(configs.app.api.prefix(), routes());
   }
 
   private handleNonExistingRoute(): void {
