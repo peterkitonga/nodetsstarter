@@ -6,7 +6,7 @@ import configs from '../configs';
 import User from '../models/user';
 import { UserModel } from '../common/interfaces/database';
 import { AuthRequest } from '../common/interfaces/requests';
-import { ResultResponse } from '../common/interfaces/responses';
+import { ResultResponse, TokenResponse } from '../common/interfaces/responses';
 
 import NotFoundError from '../common/errors/not-found';
 import UnauthorizedError from '../common/errors/unauthorized';
@@ -31,7 +31,7 @@ export default class UserService {
     }
   }
 
-  public async authenticateUser({ email, password }: AuthRequest): Promise<ResultResponse<string>> {
+  public async authenticateUser({ email, password }: AuthRequest): Promise<ResultResponse<TokenResponse>> {
     try {
       const user = await User.findOne({ email });
 
@@ -49,7 +49,7 @@ export default class UserService {
             { expiresIn: configs.app.auth.jwt.lifetime },
           );
 
-          return { status: 'success', data: token };
+          return { status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime, auth: user } };
         } else {
           throw new UnauthorizedError('Unauthorised. User password entered is incorrect.');
         }
