@@ -29,7 +29,11 @@ export default class MailerService {
       const sendMail = await Mailer.send(
         this.email,
         `${configs.app.name} reset password`,
-        { message: 'Thank you for registering with us. Please click the link below to verify your account.', token },
+        {
+          message:
+            'A password reset was requested for this account. Please click the link below to reset your password. Ignore if this was not requested by you, nothing will change.',
+          token,
+        },
         'reset',
       );
 
