@@ -9,5 +9,5 @@ export interface ResultResponse<DataType> {
 export interface TokenResponse {
   token: string;
   lifetime: string;
-  auth: UserModel;
+  auth: Partial<UserModel>;
 }
