@@ -7,7 +7,7 @@ import { HttpStatusCodes } from '../../common/enums/http';
 import { AuthRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
 
-export default class AuthController {
+class AuthController {
   private userService: UserService;
 
   public constructor() {
@@ -59,3 +59,5 @@ export default class AuthController {
     }
   }
 }
+
+export default new AuthController();

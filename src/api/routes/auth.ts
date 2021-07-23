@@ -1,12 +1,11 @@
 import { Router } from 'express';
 
 import AuthController from '../controllers/auth';
-
-const authControllerInit = new AuthController();
+import AuthValidator from '../middlewares/validation/auth';
 
 export default (appRouter: Router): void => {
   appRouter.use('/auth', appRouter);
 
-  appRouter.post('/register', authControllerInit.registerUser);
-  appRouter.post('/login', authControllerInit.authenticateUser);
+  appRouter.post('/register', AuthValidator.registerUser, AuthController.registerUser);
+  appRouter.post('/login', AuthValidator.authenticateUser, AuthController.authenticateUser);
 };
