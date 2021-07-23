@@ -56,7 +56,17 @@ export default class UserService {
             { expiresIn: configs.app.auth.jwt.lifetime },
           );
 
-          return { status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime, auth: user } };
+          const { name, avatar, is_activated, created_at } = user;
+
+          const auth = {
+            name,
+            email,
+            avatar: avatar ?? '',
+            is_activated,
+            created_at,
+          };
+
+          return { status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime, auth } };
         } else {
           throw new UnauthorizedError('Unauthorised. User password entered is incorrect.');
         }
