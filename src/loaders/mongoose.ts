@@ -3,12 +3,12 @@ import { connect, connection } from 'mongoose';
 import configs from '../configs';
 import { ResultResponse } from '../common/interfaces/responses';
 
-export default class MongooseConnect {
+class MongooseConnect {
   public constructor() {
     // constructor
   }
 
-  public static connect(): Promise<ResultResponse<null>> {
+  public connect(): Promise<ResultResponse<null>> {
     return new Promise((resolve, reject) => {
       connect(configs.database.uri(), { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
         .then(() => resolve({ status: 'success', message: 'MONGO CONNECTED!' }))
@@ -16,7 +16,7 @@ export default class MongooseConnect {
     });
   }
 
-  public static disconnect(): Promise<ResultResponse<null>> {
+  public disconnect(): Promise<ResultResponse<null>> {
     return new Promise((resolve, reject) => {
       connection
         .close(false)
@@ -25,3 +25,5 @@ export default class MongooseConnect {
     });
   }
 }
+
+export default new MongooseConnect();
