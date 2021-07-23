@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import cors from 'cors';
+import helmet from 'helmet';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
 import configs from '../configs';
@@ -20,6 +21,7 @@ export default class ExpressApp {
     this.serveStaticFiles();
 
     this.setupCors();
+    this.setupHelmet();
 
     this.handleHomeRoute();
     this.handleAppRoutes();
@@ -71,6 +73,10 @@ export default class ExpressApp {
 
   private setupCors(): void {
     this.app.use(cors());
+  }
+
+  private setupHelmet(): void {
+    this.app.use(helmet());
   }
 
   private setupBodyParser(): void {
