@@ -9,6 +9,7 @@ import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
 import { publicPath } from '../utils/path';
 import BaseError from '../common/errors/base';
+import { HttpStatusCodes } from '../common/enums/http';
 
 export default class ExpressApp {
   private static instance: ExpressApp;
@@ -79,7 +80,7 @@ export default class ExpressApp {
   private handleHomeRoute(): void {
     this.app.get('/', (req: Request, res: Response) => {
       res
-        .status(200)
+        .status(HttpStatusCodes.OK)
         .json({ message: `Hello There! Welcome to ${configs.app.name}`, version: configs.app.api.version });
     });
   }
@@ -90,7 +91,7 @@ export default class ExpressApp {
 
   private handleNonExistingRoute(): void {
     this.app.use((req: Request, res: Response) => {
-      res.status(404).json({
+      res.status(HttpStatusCodes.NOT_FOUND).json({
         status: 'error',
         message: `Route: '${req.path}' not found`,
       });
@@ -100,7 +101,7 @@ export default class ExpressApp {
   private handleErrorMiddleware(): void {
     this.app.use((err: BaseError, req: Request, res: Response, next: NextFunction) => {
       const { statusCode, message, data } = err;
-      const code = statusCode || 500;
+      const code = statusCode || HttpStatusCodes.INTERNAL_SERVER;
 
       WinstonLogger.error(message);
 

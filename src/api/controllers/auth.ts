@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import UserService from '../../services/user';
 import MailerService from '../../services/mailer';
 import Autobind from '../../common/decorators/autobind';
+import { HttpStatusCodes } from '../../common/enums/http';
 import { AuthRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
 
@@ -25,13 +26,13 @@ export default class AuthController {
       const registration = await this.userService.registerUser(request);
       await mailerService.sendWelcomeEmail(registration.data!.salt);
 
-      res.status(201).json({
+      res.status(HttpStatusCodes.CREATED).json({
         status: 'success',
-        message: `Successfully registered user '${request.name}' with email '${request.email}'`,
+        message: `Successfully registered. Please check your email '${request.email}' for the verification link`,
       });
     } catch (err) {
       if (!err.statusCode) {
-        err.statusCode = 500;
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
       }
 
       next(err);
@@ -48,10 +49,10 @@ export default class AuthController {
       const request = req.body;
       const authentication = await this.userService.authenticateUser(request);
 
-      res.status(200).json(authentication);
+      res.status(HttpStatusCodes.OK).json(authentication);
     } catch (err) {
       if (!err.statusCode) {
-        err.statusCode = 500;
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
       }
 
       next(err);
