@@ -9,6 +9,7 @@ import { AuthRequest } from '../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../common/interfaces/responses';
 
 import NotFoundError from '../common/errors/not-found';
+import ForbiddenError from '../common/errors/forbidden';
 import UnauthorizedError from '../common/errors/unauthorized';
 
 export default class UserService {
@@ -18,14 +19,20 @@ export default class UserService {
 
   public async registerUser({ name, email, password }: AuthRequest): Promise<ResultResponse<UserModel>> {
     try {
-      const buffer = crypto.randomBytes(64);
-      const salt = buffer.toString('hex');
-      const hashedPassword = await bcrypt.hash(password, 12);
+      const isRegistered = await User.exists({ email });
 
-      const user = new User({ name, email, password: hashedPassword, salt, is_activated: false });
-      const result = await user.save();
+      if (isRegistered) {
+        throw new ForbiddenError(`User with email '${email}' already exists.`);
+      } else {
+        const buffer = crypto.randomBytes(64);
+        const salt = buffer.toString('hex');
+        const hashedPassword = await bcrypt.hash(password, 12);
 
-      return { status: 'success', data: result };
+        const user = new User({ name, email, password: hashedPassword, salt, is_activated: false });
+        const result = await user.save();
+
+        return { status: 'success', data: result };
+      }
     } catch (err) {
       throw err;
     }
