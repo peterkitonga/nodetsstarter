@@ -2,7 +2,6 @@ export default class BaseError extends Error {
   public constructor(
     public name: string,
     public statusCode: number,
-    public isOperational: boolean,
     public description: string,
     public data?: unknown,
   ) {
