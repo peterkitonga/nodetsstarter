@@ -87,10 +87,10 @@ To deploy this project in production, run
 
 ## Running Tests
 
-Tests are written in Mocha, Chai under the `tests` directory and uses `istanbul` for coverage reports. To run tests, run the following command
+Tests are written in Mocha, Chai under the `test` directory and uses `istanbul` for coverage reports. To run tests, run the following command
 
 ```bash
-  npm run test
+  npm test
 ```
 
 ## Authors

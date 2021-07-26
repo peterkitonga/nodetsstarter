@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "commonjs",
+    "strict": false,
+    "noImplicitAny": false,
+    "strictPropertyInitialization": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "typeRoots": [
+      "../node_modules/@types/"
+    ],
+    "experimentalDecorators": true
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "../node_modules/"
+  ]
+}

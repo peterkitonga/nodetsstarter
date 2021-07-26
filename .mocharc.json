@@ -1,0 +1,4 @@
+{
+  "require": ["./test/register.js"],
+  "watch-files": ["./test/**/*.spec.ts"]
+}

@@ -15,11 +15,14 @@ import { publicPath } from '../utils/path';
 import BaseError from '../common/errors/base';
 import { HttpStatusCodes } from '../common/enums/http';
 
-export default class ExpressApp {
-  private static instance: ExpressApp;
+class ExpressApp {
   private app: Application = express();
 
-  private constructor() {
+  public constructor() {
+    //
+  }
+
+  public init(): void {
     this.setupBodyParser();
     this.serveStaticFiles();
 
@@ -33,15 +36,7 @@ export default class ExpressApp {
     this.listen();
   }
 
-  public static init(): ExpressApp {
-    if (!this.instance) {
-      this.instance = new ExpressApp();
-    }
-
-    return this.instance;
-  }
-
-  private async listen(): Promise<void> {
+  public async listen(): Promise<void> {
     try {
       const server = this.app.listen(configs.app.port);
       const { message } = await MongooseConnect.connect();
@@ -70,23 +65,23 @@ export default class ExpressApp {
     }
   }
 
-  private serveStaticFiles(): void {
+  public serveStaticFiles(): void {
     this.app.use(express.static(publicPath()));
   }
 
-  private setupCors(): void {
+  public setupCors(): void {
     this.app.use(cors());
   }
 
-  private setupHelmet(): void {
+  public setupHelmet(): void {
     this.app.use(helmet());
   }
 
-  private setupBodyParser(): void {
+  public setupBodyParser(): void {
     this.app.use(json());
   }
 
-  private handleHomeRoute(): void {
+  public handleHomeRoute(): void {
     this.app.get('/', (req: Request, res: Response) => {
       res
         .status(HttpStatusCodes.OK)
@@ -94,11 +89,11 @@ export default class ExpressApp {
     });
   }
 
-  private handleAppRoutes(): void {
+  public handleAppRoutes(): void {
     this.app.use(configs.app.api.prefix(), routes());
   }
 
-  private handleNonExistingRoute(): void {
+  public handleNonExistingRoute(): void {
     this.app.use((req: Request, res: Response) => {
       res.status(HttpStatusCodes.NOT_FOUND).json({
         status: 'error',
@@ -107,7 +102,7 @@ export default class ExpressApp {
     });
   }
 
-  private handleErrorMiddleware(): void {
+  public handleErrorMiddleware(): void {
     this.app.use((err: BaseError, req: Request, res: Response, next: NextFunction) => {
       const { statusCode, message, data } = err;
       const code = statusCode || HttpStatusCodes.INTERNAL_SERVER;
@@ -118,3 +113,5 @@ export default class ExpressApp {
     });
   }
 }
+
+export default new ExpressApp();
