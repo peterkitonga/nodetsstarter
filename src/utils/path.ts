@@ -2,24 +2,24 @@ import path from 'path';
 
 export const publicPath = (filepath?: string): string => {
   if (filepath !== undefined) {
-    return path.join(__dirname, '../public', filepath);
+    return path.join(__dirname, '../../public', filepath);
   } else {
-    return path.join(__dirname, '../public');
+    return path.join(__dirname, '../../public');
   }
 };
 
 export const storagePath = (filepath?: string): string => {
   if (filepath !== undefined) {
-    return path.join(__dirname, '../storage', filepath);
+    return path.join(__dirname, '../../storage', filepath);
   } else {
-    return path.join(__dirname, '../storage');
+    return path.join(__dirname, '../../storage');
   }
 };
 
 export const viewPath = (filepath?: string): string => {
   if (filepath !== undefined) {
-    return path.join(__dirname, '../views', filepath);
+    return path.join(__dirname, '../../views', filepath);
   } else {
-    return path.join(__dirname, '../views');
+    return path.join(__dirname, '../../views');
   }
 };

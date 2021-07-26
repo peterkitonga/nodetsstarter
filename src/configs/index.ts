@@ -1,3 +1,4 @@
+import path from 'path';
 import { access, constants } from 'fs';
 
 import app from './app';
@@ -5,7 +6,7 @@ import mail from './mail';
 import logging from './logging';
 import database from './database';
 
-const envPath = './.env';
+const envPath = path.join(__dirname, '../../.env');
 access(envPath, constants.F_OK, (err) => {
   if (err) {
     throw new Error('Could not find .env file');
