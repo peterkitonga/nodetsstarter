@@ -85,8 +85,6 @@ To deploy this project in production, run
   npm run build
 ```
 
-This will bundle all your code into a single minified file using webpack. To configure webpack to your liking please visit the [webpack documentation](https://webpack.js.org/configuration).
-
 ## Running Tests
 
 Tests are written in Mocha, Chai under the `tests` directory and uses `istanbul` for coverage reports. To run tests, run the following command
