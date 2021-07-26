@@ -4,7 +4,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
+/* Note: Do not add modules above the configs module that require dotenv variables */
 import configs from '../configs';
+/* ============================= OTHER MODULES BELOW ============================= */
+
 import routes from '../api/routes';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
