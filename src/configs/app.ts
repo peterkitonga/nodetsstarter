@@ -1,3 +1,9 @@
+import path from 'path';
+import dotenv from 'dotenv';
+import dotenvExpand from 'dotenv-expand';
+
+dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../.env') }));
+
 export default {
   name: process.env.APP_NAME,
   port: Number(process.env.APP_PORT),
