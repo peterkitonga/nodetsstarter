@@ -4,10 +4,10 @@
   "description": "Node starter written in TypeScript",
   "main": "app.js",
   "scripts": {
-    "serve": "webpack --watch --node-env development",
-    "build": "webpack --node-env production",
-    "lint": "eslint src/**/*.ts",
-    "lint:format": "eslint src/**/*.ts --fix"
+    "serve": "nodemon ./src/app.ts",
+    "build": "tsc --project ./",
+    "lint": "eslint ./src/**/*.ts",
+    "lint:format": "eslint ./src/**/*.ts --fix"
   },
   "author": "Peter Kitonga",
   "license": "ISC",
