@@ -1,13 +1,17 @@
 import 'reflect-metadata';
 
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
+import dotenv from 'dotenv';
+import dotenvExpand from 'dotenv-expand';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
-/* Note: Do not add modules above the configs module that require dotenv variables */
-import configs from '../configs';
-/* ============================= OTHER MODULES BELOW ============================= */
+/* Note: Do not add modules above this line that require dotenv variables */
+dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../.env') }));
+/* ======================= OTHER MODULES GO BELOW ======================= */
 
+import configs from '../configs';
 import routes from '../api/routes';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
