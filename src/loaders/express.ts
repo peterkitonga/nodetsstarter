@@ -1,13 +1,17 @@
 import 'reflect-metadata';
 
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
+import dotenv from 'dotenv';
+import dotenvExpand from 'dotenv-expand';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
-/* Note: Do not add modules above the configs module that require dotenv variables */
-import configs from '../configs';
-/* ============================= OTHER MODULES BELOW ============================= */
+/* Note: Do not add modules above this line that require dotenv variables */
+dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../.env') }));
+/* ======================= OTHER MODULES GO BELOW ======================= */
 
+import configs from '../configs';
 import routes from '../api/routes';
 import WinstonLogger from './winston';
 import MongooseConnect from './mongoose';
@@ -22,7 +26,7 @@ class ExpressApp {
     //
   }
 
-  public init(): void {
+  public async init(): Promise<void> {
     this.setupBodyParser();
     this.serveStaticFiles();
 
@@ -33,33 +37,39 @@ class ExpressApp {
     this.handleAppRoutes();
     this.handleNonExistingRoute();
     this.handleErrorMiddleware();
+
+    await this.connectDatabase();
     this.listen();
   }
 
-  public async listen(): Promise<void> {
+  public listen(): void {
+    const server = this.app.listen(configs.app.port);
+    const gracefulShutdown = () => {
+      return server.close(async () => {
+        const { message } = await MongooseConnect.disconnect();
+        WinstonLogger.info('Server shutdown successfully!');
+        WinstonLogger.info(message!);
+      });
+    };
+
+    WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
+
+    process.on('SIGTERM', () => {
+      WinstonLogger.info('Starting graceful shutdown of server...');
+      gracefulShutdown();
+    });
+
+    process.on('SIGINT', () => {
+      WinstonLogger.info('Exiting server process cleanly...');
+      gracefulShutdown();
+    });
+  }
+
+  public async connectDatabase(): Promise<void> {
     try {
-      const server = this.app.listen(configs.app.port);
       const { message } = await MongooseConnect.connect();
-      const gracefulShutdown = () => {
-        return server.close(async () => {
-          const { message } = await MongooseConnect.disconnect();
-          WinstonLogger.info('Server shutdown successfully!');
-          WinstonLogger.info(message!);
-        });
-      };
 
-      WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
       WinstonLogger.info(message!);
-
-      process.on('SIGTERM', () => {
-        WinstonLogger.info('Starting graceful shutdown of server...');
-        gracefulShutdown();
-      });
-
-      process.on('SIGINT', () => {
-        WinstonLogger.info('Exiting server process cleanly...');
-        gracefulShutdown();
-      });
     } catch (err) {
       WinstonLogger.error(err.message);
     }

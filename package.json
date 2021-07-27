@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "nodemon ./src/app.ts",
     "build": "tsc --project ./",
-    "test": "mocha --config .mocharc.json './test/**/*.spec.ts'",
+    "test": "mocha --config .mocharc.json './test/**/*.spec.ts' --exit",
     "lint": "eslint ./src/**/*.ts",
     "lint:format": "eslint ./src/**/*.ts --fix"
   },
