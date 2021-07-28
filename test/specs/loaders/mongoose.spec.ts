@@ -1,13 +1,8 @@
-import path from 'path';
 import chai from 'chai';
 import sinon from 'sinon';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import sinonChai from 'sinon-chai';
-import dotenvExpand from 'dotenv-expand';
 import chaiAsPromised from 'chai-as-promised';
-
-dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../../.env') }));
 
 import configs from '../../../src/configs';
 import MongooseConnect from '../../../src/loaders/mongoose';
