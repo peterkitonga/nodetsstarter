@@ -27,6 +27,8 @@ This starter was created to serve as a starting template for a Node.js API built
 
 To begin using the starter project, first copy the example variables into a .env file `cp .env.example .env`. You will need to modify the following environment variables in your .env file for your app to run:
 
+`NODE_ENV` - production or development
+
 `APP_PORT`
 
 `APP_BASE_URL`
