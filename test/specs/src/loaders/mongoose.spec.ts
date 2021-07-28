@@ -48,6 +48,18 @@ describe('src/loaders/mongoose: class MongooseConnect', () => {
       expect(connectionResponse).to.have.deep.property('status').to.equal('success');
       expect(connectionResponse).to.have.deep.property('message').to.equal('MONGO CONNECTED!');
     });
+
+    it('should catch errors when connection to database is unsuccessful', (done) => {
+      const errorMessage = 'SOME ERROR MESSAGE';
+
+      mongooseConnectStub.rejects(new Error(errorMessage));
+
+      MongooseConnect.connect().catch((result) => {
+        expect(result).to.have.deep.property('status').to.equal('error');
+        expect(result).to.have.deep.property('message').to.equal(errorMessage);
+        done();
+      });
+    });
   });
 
   context('disconnect()', () => {
@@ -71,6 +83,18 @@ describe('src/loaders/mongoose: class MongooseConnect', () => {
       const disconnectResponse = await MongooseConnect.disconnect();
 
       expect(disconnectResponse).to.have.deep.property('status').to.equal('success');
+    });
+
+    it('should catch errors when database disconnection is unsuccessful ', (done) => {
+      const errorMessage = 'SOME ERROR MESSAGE';
+
+      mongooseConnectionStub.rejects(new Error(errorMessage));
+
+      MongooseConnect.disconnect().catch((result) => {
+        expect(result).to.have.deep.property('status').to.equal('error');
+        expect(result).to.have.deep.property('message').to.equal(errorMessage);
+        done();
+      });
     });
   });
 });
