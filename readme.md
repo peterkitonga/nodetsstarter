@@ -19,7 +19,7 @@ This starter was created to serve as a starting template for a Node.js API built
 - [x] Handle graceful shutdown of server
 - [ ] Dependency injection for the service layer
 - [x] API validation logic (joi)
-- [ ] Unit tests with mocha, chai
+- [x] Unit tests with mocha, chai
 - [ ] Continuous integration with TravisCI
 - [ ] Docker setup with docker-compose
 
