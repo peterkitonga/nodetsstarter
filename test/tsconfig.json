@@ -3,7 +3,6 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "commonjs",
-    "rootDir": ".",
     "strict": true,
     "moduleResolution": "node",
     "baseUrl": ".",
@@ -13,7 +12,7 @@
     "experimentalDecorators": true
   },
   "include": [
-    "./**/*.ts"
+    "./specs/**/*.ts"
   ],
   "exclude": [
     "../node_modules/"
