@@ -7,10 +7,10 @@ import sinonChai from 'sinon-chai';
 import dotenvExpand from 'dotenv-expand';
 import chaiAsPromised from 'chai-as-promised';
 
-dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../../../.env') }));
+dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../../.env') }));
 
-import configs from '../../../../src/configs';
-import MongooseConnect from '../../../../src/loaders/mongoose';
+import configs from '../../../src/configs';
+import MongooseConnect from '../../../src/loaders/mongoose';
 
 const { expect } = chai;
 

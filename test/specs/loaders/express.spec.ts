@@ -2,9 +2,9 @@ import chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import ExpressApp from '../../../../src/loaders/express';
-import WinstonLogger from '../../../../src/loaders/winston';
-import MongooseConnect from '../../../../src/loaders/mongoose';
+import ExpressApp from '../../../src/loaders/express';
+import WinstonLogger from '../../../src/loaders/winston';
+import MongooseConnect from '../../../src/loaders/mongoose';
 
 const { expect } = chai;
 
