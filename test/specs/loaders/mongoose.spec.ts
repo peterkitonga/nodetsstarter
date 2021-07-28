@@ -2,7 +2,6 @@ import chai from 'chai';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
 import sinonChai from 'sinon-chai';
-import chaiAsPromised from 'chai-as-promised';
 
 import configs from '../../../src/configs';
 import MongooseConnect from '../../../src/loaders/mongoose';
@@ -10,7 +9,6 @@ import MongooseConnect from '../../../src/loaders/mongoose';
 const { expect } = chai;
 
 chai.use(sinonChai);
-chai.use(chaiAsPromised);
 
 const sandbox = sinon.createSandbox();
 
