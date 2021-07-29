@@ -57,7 +57,7 @@ class Mailer {
         }
       })
       .catch((err) => {
-        return Promise.reject({ status: 'success', message: err.message });
+        return Promise.reject({ status: 'error', message: err.message });
       });
   }
 
