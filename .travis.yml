@@ -7,5 +7,5 @@ script:
   - npm run test:coverage
 before_script:
   - "cp .env.example .env"
-after_script:
+after_success:
   - npm run test:reporter
