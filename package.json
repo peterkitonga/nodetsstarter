@@ -8,7 +8,7 @@
     "build": "tsc --project .",
     "test": "mocha 'test/**/*.spec.ts' --exit",
     "test:coverage": "nyc npm test",
-    "test:reporter": "cat test/coverage/lcov.info",
+    "test:reporter": "cat test/coverage/lcov.info | coveralls",
     "test:view": "open-cli test/coverage/lcov-report/index.html",
     "lint": "eslint src/**/*.ts",
     "lint:format": "eslint src/**/*.ts --fix"
@@ -34,6 +34,7 @@
     "@typescript-eslint/parser": "^4.28.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
+    "coveralls": "^3.1.1",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
