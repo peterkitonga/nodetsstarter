@@ -1,4 +1,4 @@
-.DS_Store
+# Vendor and build directories
 node_modules
 dist
 
@@ -13,3 +13,10 @@ dist
 *.njsproj
 *.sln
 *.sw*
+
+# Coverage report directories
+.nyc_output
+test/coverage
+
+# Miscellaneous
+.DS_Store

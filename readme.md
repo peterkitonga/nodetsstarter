@@ -20,7 +20,8 @@ This starter was created to serve as a starting template for a Node.js API built
 - [ ] Dependency injection for the service layer
 - [x] API validation logic (joi)
 - [x] Unit tests with mocha, chai
-- [ ] Continuous integration with TravisCI
+- [x] Continuous integration with TravisCI
+- [x] Coverage reports with Coveralls
 - [ ] Docker setup with docker-compose
 
 ## Environment Variables
@@ -67,7 +68,7 @@ Install dependencies
   npm install
 ```
 
-Start the server
+Start the development server
 
 ```bash
   npm run serve
@@ -93,6 +94,28 @@ Tests are written in Mocha, Chai under the `test` directory and uses `istanbul` 
 
 ```bash
   npm test
+```
+
+To run and view coverage reports for the tests, you will need to run two scripts in sequential order
+
+```bash
+  npm run test:coverage ; npm run test:view
+```
+
+## Linting
+
+Linting is configured with eslint and prettier. You are free to configure it to your liking using the configuration files `.eslintrc` and `.prettierrc`
+
+To check for linting errors, run
+
+```bash
+  npm run lint
+```
+
+To format code with linting rules, run
+
+```bash
+  npm run lint:format
 ```
 
 ## Authors

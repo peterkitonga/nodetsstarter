@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - "14.15.1"
+install:
+  - npm install
+script:
+  - npm test
+  - npm run test:coverage
+before_script:
+  - "cp .env.example .env"
+after_script:
+  - npm run test:reporter

@@ -1,4 +1,4 @@
 {
-  "require": ["./test/register.js"],
-  "watch-files": ["./test/**/*.spec.ts"]
+  "require": ["source-map-support/register", "test/register.js"],
+  "watch-files": ["test/**/*.spec.ts"]
 }
