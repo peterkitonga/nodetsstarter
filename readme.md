@@ -1,4 +1,6 @@
-# NodeTS Starter <a href="https://coveralls.io/github/PeterKitonga/nodetsstarter?branch=master"><img align="right" src="https://coveralls.io/repos/github/PeterKitonga/nodetsstarter/badge.svg?branch=master"></a><a href="https://travis-ci.com/PeterKitonga/nodetsstarter"><img align="right" src="https://travis-ci.com/PeterKitonga/nodetsstarter.svg?branch=master"></a>
+# NodeTS Starter 
+
+<a href="https://travis-ci.com/PeterKitonga/nodetsstarter"><img src="https://travis-ci.com/PeterKitonga/nodetsstarter.svg?branch=master"></a> <a href="https://coveralls.io/github/PeterKitonga/nodetsstarter?branch=master"><img src="https://coveralls.io/repos/github/PeterKitonga/nodetsstarter/badge.svg?branch=master"></a>
 
 This starter was created to serve as a starting template for a Node.js API built with Express and TypeScript.
 
