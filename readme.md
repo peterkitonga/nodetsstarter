@@ -46,6 +46,10 @@ To begin using the starter project, first copy the example variables into a .env
 
 `MONGO_HOST` - if atlas, pass the domain provided after the `@` symbol when you click on `connect` > `Connect your application`
 
+`FILE_SYSTEM_PROVIDER` - local or s3([AWS S3](https://aws.amazon.com/s3))
+
+`FILE_SYSTEM_LIMIT` - maximum file size to be allowed. `Note: this affects the maximum request body size of Express`
+
 `CLIENT_BASE_URL` - base url for the front-end client application
 
 Other configurations to change are all listed in the created .env file.
