@@ -88,7 +88,7 @@ class ExpressApp {
   }
 
   public setupBodyParser(): void {
-    this.app.use(json());
+    this.app.use(json({ limit: configs.filesystems.limit }));
   }
 
   public handleHomeRoute(): void {
