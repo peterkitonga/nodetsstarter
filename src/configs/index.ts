@@ -5,6 +5,7 @@ import app from './app';
 import mail from './mail';
 import logging from './logging';
 import database from './database';
+import filesystems from './filesystems';
 
 const envPath = path.join(__dirname, '../../.env');
 access(envPath, constants.F_OK, (err) => {
@@ -16,6 +17,7 @@ access(envPath, constants.F_OK, (err) => {
 export default {
   app,
   mail,
-  database,
   logging,
+  database,
+  filesystems,
 };
