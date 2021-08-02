@@ -1,45 +1,47 @@
-import { relative, dirname } from 'path';
-import { unlink, symlink, createWriteStream } from 'fs';
+import { unlink, symlink, writeFile } from 'fs';
 
-import { storagePath } from '../utils/path';
+import configs from '../configs';
+import { publicPath } from '../utils/path';
 import { ResultResponse } from '../common/interfaces/responses';
 
-export const storeLocalFile = (filename: string): Promise<ResultResponse<string>> => {
-  const filepath = storagePath(`app/public/${filename}`);
+export const storeLocalFile = (base64String: string): Promise<ResultResponse<string>> => {
+  const fileExt = base64String.substring(base64String.indexOf('/') + 1, base64String.indexOf(';base64'));
+  const fileName = `${Date.now()}.${fileExt}`;
+  const filePath = `${configs.filesystems.providers.local.dir}/${fileName}`;
+  const base64File = base64String.split(';base64,').pop();
 
   return new Promise((resolve, reject) => {
-    createWriteStream(filepath)
-      .on('error', (err) => reject({ status: 'error', message: err.message }))
-      .on('finish', () => {
-        /**
-         * Create symlink to the public folder
-         *
-         * @link https://stackoverflow.com/questions/29777506/create-relative-symlinks-using-absolute-paths-in-node-js#answer-57281866
-         */
-        const source = `/storage/app/public/${filename}`;
-        const absoluteTarget = `/public/storage/${filename}`;
-        const target = relative(dirname(source), absoluteTarget);
-
-        symlink(target, source, (err) => {
-          if (err) {
-            reject({ status: 'error', message: err.message });
-          } else {
-            resolve({ status: 'success', data: filepath });
-          }
-        });
-      });
-  });
-};
-
-export const deleteLocalFile = (filename: string): Promise<ResultResponse<string>> => {
-  const filepath = storagePath(`app/public/${filename}`);
-
-  return new Promise((resolve, reject) => {
-    unlink(filepath, (err) => {
+    writeFile(filePath, base64File!, { encoding: 'base64' }, (err) => {
       if (err) {
         reject({ status: 'error', message: err.message });
       } else {
-        resolve({ status: 'success', data: filepath });
+        const absoluteTarget = filePath;
+        const absolutePath = publicPath(`storage/${fileName}`);
+
+        /**
+         * Create symlink to the public/storage folder
+         */
+        symlink(absoluteTarget, absolutePath, (err) => {
+          if (err) {
+            reject({ status: 'error', message: err.message });
+          } else {
+            resolve({ status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` });
+          }
+        });
+      }
+    });
+  });
+};
+
+export const deleteLocalFile = (fileName: string): Promise<ResultResponse<string>> => {
+  const filePath = `${configs.filesystems.providers.local.dir}/${fileName}`;
+
+  return new Promise((resolve, reject) => {
+    unlink(filePath, (err) => {
+      if (err) {
+        reject({ status: 'error', message: err.message });
+      } else {
+        resolve({ status: 'success', data: filePath });
       }
     });
   });
