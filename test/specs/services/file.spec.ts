@@ -23,7 +23,7 @@ const fileData = JSON.parse(rawFiledata);
 const fileName = `${Date.now()}.jpeg`;
 const fileContent = fileData.image;
 
-describe('src/utils/path', () => {
+describe('src/services/file: class FileStorageService', () => {
   afterEach(() => {
     sandbox.restore();
   });
