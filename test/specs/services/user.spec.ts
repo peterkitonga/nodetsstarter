@@ -62,6 +62,7 @@ describe('src/services/user: class UserService', () => {
     });
 
     it('should return user details after successful save', async () => {
+      const bcryptHashStub = sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
       const userDetails = {
         name: 'John Doe',
         email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
@@ -80,6 +81,7 @@ describe('src/services/user: class UserService', () => {
 
       await expect(registrationResponse).to.eventually.be.fulfilled.with.deep.property('data');
       expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
+      expect(bcryptHashStub).to.have.been.called;
       expect(userSaveStub).to.have.been.called;
     });
   });
