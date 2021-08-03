@@ -36,25 +36,17 @@ class Mailer {
     // send mail with defined transport object
     return this.getViewData(view, messageOptions)
       .then((viewResponse) => {
-        if (viewResponse.status === 'success') {
-          const mailOptions: SendMailOptions = {
-            from: `"${configs.mail.from.name}" ${configs.mail.from.address}`, // sender address (who sends)
-            to: receiver, // list of receivers (who receives)
-            subject: subject, // subject line
-            html: viewResponse.data, // html body
-          };
+        const mailOptions: SendMailOptions = {
+          from: `"${configs.mail.from.name}" ${configs.mail.from.address}`, // sender address (who sends)
+          to: receiver, // list of receivers (who receives)
+          subject: subject, // subject line
+          html: viewResponse.data, // html body
+        };
 
-          return this.transporter.sendMail(mailOptions);
-        } else {
-          throw new Error(viewResponse.message);
-        }
+        return this.transporter.sendMail(mailOptions);
       })
       .then((mailResponse) => {
-        if ('response' in mailResponse) {
-          return Promise.resolve({ status: 'success', message: mailResponse.response });
-        } else {
-          throw mailResponse.error;
-        }
+        return Promise.resolve({ status: 'success', message: mailResponse.response });
       })
       .catch((err) => {
         return Promise.reject({ status: 'error', message: err.message });
