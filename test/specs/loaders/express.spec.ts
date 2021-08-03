@@ -25,6 +25,8 @@ describe('src/loaders/express: class ExpressApp', () => {
     let nonExistentRouteStub: sinon.SinonStub;
     let errorHandlingMiddlewareStub: sinon.SinonStub;
     let databaseConnectionStub: sinon.SinonStub;
+    let staticFilesStub: sinon.SinonStub;
+    let bodyParserStub: sinon.SinonStub;
 
     beforeEach(() => {
       listenStub = sandbox.stub(ExpressApp, 'listen');
@@ -34,6 +36,8 @@ describe('src/loaders/express: class ExpressApp', () => {
       nonExistentRouteStub = sandbox.stub(ExpressApp, 'handleNonExistingRoute');
       errorHandlingMiddlewareStub = sandbox.stub(ExpressApp, 'handleErrorMiddleware');
       databaseConnectionStub = sandbox.stub(ExpressApp, 'connectDatabase');
+      staticFilesStub = sandbox.stub(ExpressApp, 'serveStaticFiles');
+      bodyParserStub = sandbox.stub(ExpressApp, 'setupBodyParser');
     });
 
     it('should initialize server correctly', async () => {
@@ -48,13 +52,13 @@ describe('src/loaders/express: class ExpressApp', () => {
       expect(corsMiddlewareStub).to.be.calledOnce;
     });
 
-    it('should register a home route', async () => {
+    it('should register the home route middleware', async () => {
       await ExpressApp.init();
 
       expect(homeRouteStub).to.be.calledOnce;
     });
 
-    it('should register app routes', async () => {
+    it('should register app routes middleware', async () => {
       await ExpressApp.init();
 
       expect(appRoutesStub).to.be.calledOnce;
@@ -72,10 +76,22 @@ describe('src/loaders/express: class ExpressApp', () => {
       expect(errorHandlingMiddlewareStub).to.be.calledOnce;
     });
 
-    it('should connect to a database', async () => {
+    it('should load database connection functions', async () => {
       await ExpressApp.init();
 
       expect(databaseConnectionStub).to.be.calledOnce;
+    });
+
+    it('should register middleware for serving static files', async () => {
+      await ExpressApp.init();
+
+      expect(staticFilesStub).to.be.calledOnce;
+    });
+
+    it('should register the body parser middleware', async () => {
+      await ExpressApp.init();
+
+      expect(bodyParserStub).to.be.calledOnce;
     });
   });
 
