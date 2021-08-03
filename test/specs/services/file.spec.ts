@@ -57,9 +57,9 @@ describe('src/services/file: class FileStorageService', () => {
       writeFileStub.rejects(new Error('SOME ERROR'));
       symlinkStub.resolves();
 
-      const storageResponse = await storeLocalFile(fileName, fileContent);
-
-      expect(storageResponse).to.have.deep.property('status').to.equal('error');
+      await expect(storeLocalFile(fileName, fileContent))
+        .to.eventually.be.rejected.with.deep.property('status')
+        .to.equal('error');
       expect(writeFileStub).to.have.been.calledOnce;
       expect(symlinkStub).to.not.have.been.called;
     });
@@ -89,9 +89,7 @@ describe('src/services/file: class FileStorageService', () => {
     it('should return error message if deletion fails', async () => {
       unlinkStub.rejects(new Error('SOME ERROR'));
 
-      const deletionResponse = await deleteLocalFile(fileName);
-
-      expect(deletionResponse).to.have.deep.property('status').to.equal('error');
+      await expect(deleteLocalFile(fileName)).to.eventually.be.rejected.with.deep.property('status').to.equal('error');
       expect(unlinkStub).to.have.been.calledOnce;
     });
   });
@@ -123,9 +121,9 @@ describe('src/services/file: class FileStorageService', () => {
     it('should return error message on unsuccessful upload to aws s3', async () => {
       s3ClientStub.rejects(new Error('SOME ERROR'));
 
-      const storageResponse = await storeCloudFile(fileName, fileContent, 'image/jpeg');
-
-      expect(storageResponse).to.have.deep.property('status').to.equal('error');
+      await expect(storeCloudFile(fileName, fileContent, 'image/jpeg'))
+        .to.eventually.be.rejected.with.deep.property('status')
+        .to.equal('error');
       expect(s3ClientStub).to.have.been.calledOnce;
     });
   });
@@ -157,9 +155,7 @@ describe('src/services/file: class FileStorageService', () => {
     it('should catch any error present during deletion of file from aws s3', async () => {
       s3ClientStub.rejects(new Error('SOME ERROR'));
 
-      const deletionResponse = await deleteCloudFile(fileName);
-
-      expect(deletionResponse).to.have.deep.property('status').to.equal('error');
+      await expect(deleteCloudFile(fileName)).to.eventually.be.rejected.with.deep.property('status').to.equal('error');
       expect(s3ClientStub).to.have.been.calledOnce;
     });
   });
@@ -203,10 +199,9 @@ describe('src/services/file: class FileStorageService', () => {
       providerStub.value('local');
       writeFileStub.rejects(new Error('SOME ERROR'));
 
-      const storageResponse = await fileStorageService.storeFile(fileContent);
-
-      expect(storageResponse).to.have.deep.property('status').to.equal('error');
-      expect(storageResponse).to.have.deep.property('message').to.be.a('string');
+      await expect(fileStorageService.storeFile(fileContent))
+        .to.eventually.be.rejected.with.deep.property('status')
+        .to.equal('error');
       expect(writeFileStub).to.have.been.called;
     });
   });
@@ -240,6 +235,16 @@ describe('src/services/file: class FileStorageService', () => {
 
       expect(deletionResponse).to.have.deep.property('status').to.equal('success');
       expect(s3ClientStub).to.have.been.called;
+    });
+
+    it('should return error message on unsuccessful upload', async () => {
+      providerStub.value('local');
+      unlinkStub.rejects(new Error('SOME ERROR'));
+
+      await expect(fileStorageService.deleteFile(fileName))
+        .to.eventually.be.rejected.with.deep.property('status')
+        .to.equal('error');
+      expect(unlinkStub).to.have.been.called;
     });
   });
 });

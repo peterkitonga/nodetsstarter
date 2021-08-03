@@ -53,9 +53,9 @@ export default class FileStorageService {
       await writeFile(filePath, base64File!, { encoding: 'base64' });
       await symlink(absoluteTarget, absolutePath);
 
-      return { status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` };
+      return Promise.resolve({ status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` });
     } catch (err) {
-      return { status: 'error', message: err.message };
+      return Promise.reject({ status: 'error', message: err.message });
     }
   }
 
@@ -66,9 +66,9 @@ export default class FileStorageService {
       await unlink(publicPath(`storage/${fileName}`));
       await unlink(filePath);
 
-      return { status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` };
+      return Promise.resolve({ status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` });
     } catch (err) {
-      return { status: 'error', message: err.message };
+      return Promise.reject({ status: 'error', message: err.message });
     }
   }
 
@@ -78,13 +78,13 @@ export default class FileStorageService {
 
     return SThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'))
       .then(() => {
-        return {
+        return Promise.resolve({
           status: 'success',
           data: `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/${fileName}`,
-        };
+        });
       })
       .catch((err) => {
-        return { status: 'error', message: err.message };
+        return Promise.reject({ status: 'error', message: err.message });
       });
   }
 
@@ -94,13 +94,13 @@ export default class FileStorageService {
 
     return SThreeClient.deleteFromBucket(fileName)
       .then(() => {
-        return {
+        return Promise.resolve({
           status: 'success',
           data: `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/${fileName}`,
-        };
+        });
       })
       .catch((err) => {
-        return { status: 'error', message: err.message };
+        return Promise.reject({ status: 'error', message: err.message });
       });
   }
 }
