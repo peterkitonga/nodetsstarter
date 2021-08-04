@@ -201,15 +201,16 @@ describe('src/loaders/express: class ExpressApp', () => {
   });
 
   context('setupBodyParser()', () => {
-    it('should configure the body parser middleware', () => {
+    it('should configure the body parser middleware with limit', () => {
+      const bodyLimit = '10mb';
+      const bodyLimitStub = sandbox.stub(configs.filesystems, 'limit').value(bodyLimit);
       const appUseStub = sandbox.stub(ExpressApp['app'], 'use');
+      const expressJsonStub = sandbox.stub(express, 'json');
 
       ExpressApp.setupBodyParser();
 
-      const lastArgument = appUseStub.getCall(0).args[0];
-
       expect(appUseStub).to.have.been.calledOnce;
-      expect(lastArgument).to.exist.and.be.an.instanceOf(Function);
+      expect(expressJsonStub).to.have.been.calledOnceWith({ limit: bodyLimit });
     });
   });
 
