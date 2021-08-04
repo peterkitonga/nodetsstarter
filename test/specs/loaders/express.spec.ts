@@ -9,6 +9,7 @@ import { publicPath } from '../../../src/utils/path';
 import ExpressApp from '../../../src/loaders/express';
 import WinstonLogger from '../../../src/loaders/winston';
 import MongooseConnect from '../../../src/loaders/mongoose';
+import { HttpStatusCodes } from '../../../src/common/enums/http';
 
 const { expect } = chai;
 
@@ -231,7 +232,7 @@ describe('src/loaders/express: class ExpressApp', () => {
       ExpressApp.handleHomeRoute();
 
       const res = await request(ExpressApp['app']).get('/');
-      expect(res.status).to.equal(200);
+      expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.match(/Hello There! Welcome to/);
     });
   });
@@ -268,7 +269,7 @@ describe('src/loaders/express: class ExpressApp', () => {
       const regex = new RegExp(`Route: '${nonExistingRoute}' not found`);
 
       const res = await request(ExpressApp['app']).get(nonExistingRoute);
-      expect(res.status).to.equal(404);
+      expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
       expect(res.body.message).to.match(regex);
     });
   });
@@ -294,7 +295,7 @@ describe('src/loaders/express: class ExpressApp', () => {
       ExpressApp.handleErrorMiddleware();
 
       const res = await request(ExpressApp['app']).post('/api/v2/auth/login').send({ email: 'disdegnosi@dunsoi.com' });
-      expect(res.status).to.equal(422);
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
       expect(res.body.message).to.be.a('string');
       expect(winstonLoggerErrorStub).to.have.been.calledOnce;
     });
