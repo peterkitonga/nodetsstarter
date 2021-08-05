@@ -77,4 +77,39 @@ export default class AuthService {
       throw err;
     }
   }
+
+  public async activateUser(code: string): Promise<ResultResponse<Partial<UserModel>>> {
+    try {
+      const isValidCode = await User.exists({ salt: code });
+
+      if (isValidCode) {
+        const user = await User.findOne({ salt: code });
+
+        if (user!.is_activated) {
+          throw new ForbiddenError(`User account with activation code '${code}' is already activated.`);
+        } else {
+          const buffer = crypto.randomBytes(64);
+          const newSalt = buffer.toString('hex');
+
+          user!.is_activated = true;
+          user!.salt = newSalt;
+
+          const { name, email, is_activated } = await user!.save();
+
+          return {
+            status: 'success',
+            data: {
+              name,
+              email,
+              is_activated,
+            },
+          };
+        }
+      } else {
+        throw new NotFoundError(`User with activation code '${code}' does not exist.`);
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
 }
