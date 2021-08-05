@@ -147,4 +147,59 @@ describe('src/services/auth: class AuthService', () => {
       expect(bcryptCompareStub).to.have.been.calledOnceWith(userCredentials.password, 'hashedpassword');
     });
   });
+
+  context('activateUser()', () => {
+    let userFindOneStub: sinon.SinonStub;
+    let userExistsStub: sinon.SinonStub;
+    const activationCode = 'eeHieSoo6Ziequ0opidieVau';
+
+    beforeEach(() => {
+      userFindOneStub = sandbox.stub(User, 'findOne');
+      userExistsStub = sandbox.stub(User, 'exists');
+    });
+
+    it('should return error message if no user with given code is found', async () => {
+      userExistsStub.resolves(false);
+
+      const activationResponse = authService.activateUser(activationCode);
+
+      await expect(activationResponse).to.eventually.be.rejectedWith(NotFoundError);
+      expect(userExistsStub).to.have.been.calledOnceWith({ salt: activationCode });
+    });
+
+    it('should return error message if user is found but activated', async () => {
+      userExistsStub.resolves(true);
+      userFindOneStub.resolves({
+        is_activated: true,
+      });
+
+      const activationResponse = authService.activateUser(activationCode);
+
+      await expect(activationResponse).to.eventually.be.rejectedWith(ForbiddenError);
+      expect(userExistsStub).to.have.been.calledOnceWith({ salt: activationCode });
+    });
+
+    it('should return user email and status on successful activation', async () => {
+      const userDetails = {
+        name: 'John Doe',
+        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
+      };
+      const userSaveStub = sandbox.stub().resolves({
+        name: userDetails.name,
+        email: userDetails.email,
+        is_activated: true,
+      });
+      userExistsStub.resolves(true);
+      userFindOneStub.resolves({
+        is_activated: false,
+        save: userSaveStub,
+      });
+
+      const activationResponse = await authService.activateUser(activationCode);
+
+      expect(userSaveStub).to.have.been.calledOnce;
+      expect(activationResponse).to.have.nested.property('data.is_activated').to.equal(true);
+      expect(activationResponse).to.have.nested.property('data.email').to.equal(userDetails.email);
+    });
+  });
 });
