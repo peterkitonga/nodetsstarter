@@ -12,7 +12,7 @@ import NotFoundError from '../common/errors/not-found';
 import ForbiddenError from '../common/errors/forbidden';
 import UnauthorizedError from '../common/errors/unauthorized';
 
-export default class UserService {
+export default class AuthService {
   public constructor() {
     //
   }

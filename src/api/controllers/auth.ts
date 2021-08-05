@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import UserService from '../../services/user';
+import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
 import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
@@ -8,10 +8,10 @@ import { AuthRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
 
 class AuthController {
-  private userService: UserService;
+  private authService: AuthService;
 
   public constructor() {
-    this.userService = new UserService();
+    this.authService = new AuthService();
   }
 
   @Autobind
@@ -23,7 +23,7 @@ class AuthController {
     try {
       const request = req.body;
       const mailerService = new MailerService(request.email);
-      const registration = await this.userService.registerUser(request);
+      const registration = await this.authService.registerUser(request);
       await mailerService.sendWelcomeEmail(registration.data!.salt);
 
       res.status(HttpStatusCodes.CREATED).json({
@@ -47,7 +47,7 @@ class AuthController {
   ): Promise<void> {
     try {
       const request = req.body;
-      const authentication = await this.userService.authenticateUser(request);
+      const authentication = await this.authService.authenticateUser(request);
 
       res.status(HttpStatusCodes.OK).json(authentication);
     } catch (err) {

@@ -5,7 +5,7 @@ import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import User from '../../../src/models/user';
-import UserService from '../../../src/services/user';
+import AuthService from '../../../src/services/auth';
 import NotFoundError from '../../../src/common/errors/not-found';
 import ForbiddenError from '../../../src/common/errors/forbidden';
 import UnauthorizedError from '../../../src/common/errors/unauthorized';
@@ -16,9 +16,9 @@ chai.use(sinonChai);
 chai.use(chaiAsPromised);
 
 const sandbox = sinon.createSandbox();
-const userService = new UserService();
+const authService = new AuthService();
 
-describe('src/services/user: class UserService', () => {
+describe('src/services/auth: class AuthService', () => {
   afterEach(() => {
     sandbox.restore();
   });
@@ -39,7 +39,7 @@ describe('src/services/user: class UserService', () => {
         password: 'supersecretpassword',
       };
       userExistsStub.resolves(true);
-      const registrationResponse = userService.registerUser(userDetails);
+      const registrationResponse = authService.registerUser(userDetails);
 
       await expect(registrationResponse).to.eventually.be.rejectedWith(ForbiddenError);
       expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
@@ -53,7 +53,7 @@ describe('src/services/user: class UserService', () => {
       };
       userExistsStub.resolves(false);
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').rejects();
-      const registrationResponse = userService.registerUser(userDetails);
+      const registrationResponse = authService.registerUser(userDetails);
 
       await expect(registrationResponse).to.eventually.be.rejectedWith(Error);
       expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
@@ -77,7 +77,7 @@ describe('src/services/user: class UserService', () => {
         email: userDetails.password,
         password: 'hashedpassword',
       });
-      const registrationResponse = userService.registerUser(userDetails);
+      const registrationResponse = authService.registerUser(userDetails);
 
       await expect(registrationResponse).to.eventually.be.fulfilled.with.deep.property('data');
       expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
@@ -99,7 +99,7 @@ describe('src/services/user: class UserService', () => {
         password: 'supersecretpassword',
       };
       userFindOneStub.resolves();
-      const authenticationResponse = userService.authenticateUser(userCredentials);
+      const authenticationResponse = authService.authenticateUser(userCredentials);
 
       await expect(authenticationResponse).to.eventually.be.rejectedWith(NotFoundError);
       expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
@@ -114,7 +114,7 @@ describe('src/services/user: class UserService', () => {
         password: 'hashedpassword',
       });
       const bcryptCompareStub = sandbox.stub(bcrypt, 'compare').resolves(false);
-      const authenticationResponse = userService.authenticateUser(userCredentials);
+      const authenticationResponse = authService.authenticateUser(userCredentials);
 
       await expect(authenticationResponse).to.eventually.be.rejectedWith(UnauthorizedError);
       expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
@@ -138,7 +138,7 @@ describe('src/services/user: class UserService', () => {
         created_at: 'SOME DATE',
       });
       const bcryptCompareStub = sandbox.stub(bcrypt, 'compare').resolves(true);
-      const authenticationResponse = userService.authenticateUser(userCredentials);
+      const authenticationResponse = authService.authenticateUser(userCredentials);
 
       await expect(authenticationResponse)
         .to.eventually.be.fulfilled.with.nested.property('data.token')
