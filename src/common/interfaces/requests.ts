@@ -4,3 +4,7 @@ export interface AuthRequest {
   password: string;
   password_confirmation?: string;
 }
+
+export interface ActivationRequest {
+  code: string;
+}

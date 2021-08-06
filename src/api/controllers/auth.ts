@@ -4,7 +4,7 @@ import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
 import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
-import { AuthRequest } from '../../common/interfaces/requests';
+import { AuthRequest, ActivationRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
 
 class AuthController {
@@ -28,7 +28,7 @@ class AuthController {
 
       res.status(HttpStatusCodes.CREATED).json({
         status: 'success',
-        message: `Successfully registered. Please check your email '${request.email}' for the verification link`,
+        message: `Successfully registered. Please check your email '${request.email}' for the activation link.`,
       });
     } catch (err) {
       if (!err.statusCode) {
@@ -50,6 +50,28 @@ class AuthController {
       const authentication = await this.authService.authenticateUser(request);
 
       res.status(HttpStatusCodes.OK).json(authentication);
+    } catch (err) {
+      if (!err.statusCode) {
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      }
+
+      next(err);
+    }
+  }
+
+  @Autobind
+  public async activateUser(
+    req: Request<ActivationRequest>,
+    res: Response<ResultResponse<null>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { code } = req.params;
+      const activation = await this.authService.activateUser(code);
+
+      res
+        .status(HttpStatusCodes.OK)
+        .json({ status: 'status', message: `User with email '${activation.data!.email}' successfully activated.` });
     } catch (err) {
       if (!err.statusCode) {
         err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
