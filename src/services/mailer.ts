@@ -14,7 +14,7 @@ export default class MailerService {
       const sendMail = await Mailer.send(
         this.email,
         `Welcome to ${configs.app.name}`,
-        { message: 'Thank you for registering with us. Please click the link below to verify your account.', code },
+        { message: 'Thank you for registering with us. Please click the link below to activate your account.', code },
         'welcome',
       );
 
