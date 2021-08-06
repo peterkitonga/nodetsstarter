@@ -4,7 +4,7 @@ import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
 import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
-import { AuthRequest, ActivationRequest } from '../../common/interfaces/requests';
+import { AuthRequest, ActivationRequest, ResetPasswordRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
 
 class AuthController {
@@ -66,12 +66,36 @@ class AuthController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const { code } = req.params;
-      const activation = await this.authService.activateUser(code);
+      const request = req.params;
+      const activation = await this.authService.activateUser(request.code);
 
       res
         .status(HttpStatusCodes.OK)
         .json({ status: 'status', message: `User with email '${activation.data!.email}' successfully activated.` });
+    } catch (err) {
+      if (!err.statusCode) {
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      }
+
+      next(err);
+    }
+  }
+
+  @Autobind
+  public async sendResetLink(
+    req: Request<unknown, unknown, ResetPasswordRequest>,
+    res: Response<ResultResponse<null>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const request = req.body;
+      const mailerService = new MailerService(request.email!);
+      const reset = await this.authService.createResetToken(request.email!);
+      await mailerService.sendResetPasswordEmail(reset.data!.token!);
+
+      res
+        .status(HttpStatusCodes.CREATED)
+        .json({ status: 'status', message: `A password reset link has been sent to '${request.email}'.` });
     } catch (err) {
       if (!err.statusCode) {
         err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
