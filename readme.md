@@ -1,6 +1,6 @@
 # NodeTS Starter 
 
-<a href="https://travis-ci.com/PeterKitonga/nodetsstarter" target="_blank"><img alt="Build Status" src="https://img.shields.io/travis/com/PeterKitonga/nodetsstarter/master?style=for-the-badge"></a> <a href="https://coveralls.io/github/PeterKitonga/nodetsstarter" target="_blank"><img alt="Coverage Status" src="https://img.shields.io/coveralls/github/PeterKitonga/nodetsstarter/master?style=for-the-badge"></a>
+<a href="https://travis-ci.com/peterkitonga/nodetsstarter" target="_blank"><img alt="Build Status" src="https://img.shields.io/travis/com/peterkitonga/nodetsstarter/master?style=for-the-badge"></a> <a href="https://coveralls.io/github/peterkitonga/nodetsstarter" target="_blank"><img alt="Coverage Status" src="https://img.shields.io/coveralls/github/peterkitonga/nodetsstarter/master?style=for-the-badge"></a>
 
 This starter was created to serve as a starting template for a Node.js API built with Express and TypeScript.
 
@@ -59,7 +59,7 @@ Other configurations to change are all listed in the created .env file.
 Clone the project
 
 ```bash
-  git clone https://github.com/PeterKitonga/nodetsstarter
+  git clone https://github.com/peterkitonga/nodetsstarter
 ```
 
 Go to the project directory
@@ -126,4 +126,4 @@ To format code with linting rules, run
 
 ## Authors
 
-[@PeterKitonga](https://www.github.com/PeterKitonga)
+[Peter Kitonga](https://www.github.com/peterkitonga)
