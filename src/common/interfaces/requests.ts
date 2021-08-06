@@ -8,3 +8,10 @@ export interface AuthRequest {
 export interface ActivationRequest {
   code: string;
 }
+
+export interface ResetPasswordRequest {
+  email?: string;
+  token?: string;
+  password?: string;
+  password_confirmation?: string;
+}

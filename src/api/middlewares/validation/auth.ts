@@ -2,7 +2,7 @@ import joi from 'joi';
 import { Request, Response, NextFunction } from 'express';
 
 import ValidationError from '../../../common/errors/validation';
-import { AuthRequest } from '../../../common/interfaces/requests';
+import { AuthRequest, ResetPasswordRequest } from '../../../common/interfaces/requests';
 
 class AuthValidator {
   public constructor() {
@@ -81,6 +81,33 @@ class AuthValidator {
       });
 
       await authenticationSchema.validateAsync(request);
+
+      next();
+    } catch (err) {
+      const { message } = err.details[0];
+
+      next(new ValidationError(message, request));
+    }
+  }
+
+  public async sendResetLink(
+    req: Request<unknown, unknown, ResetPasswordRequest>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    const request = req.body;
+
+    try {
+      const resetSchema = joi.object({
+        email: joi.string().email().trim(true).required().label('email').messages({
+          'string.base': `The {#label} field should be text`,
+          'string.empty': `The {#label} field cannot be empty`,
+          'string.email': `The {#label} field should be a valid email`,
+          'any.required': `The {#label} field is required`,
+        }),
+      });
+
+      await resetSchema.validateAsync(request);
 
       next();
     } catch (err) {
