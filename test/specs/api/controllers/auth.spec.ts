@@ -12,6 +12,7 @@ import Mailer from '../../../../src/loaders/nodemailer';
 import ExpressApp from '../../../../src/loaders/express';
 import MailerService from '../../../../src/services/mailer';
 import WinstonLogger from '../../../../src/loaders/winston';
+import PasswordReset from '../../../../src/models/password-reset';
 import { HttpStatusCodes } from '../../../../src/common/enums/http';
 
 const { expect } = chai;
@@ -225,7 +226,7 @@ describe('src/api/controllers/auth', () => {
     });
   });
 
-  context('POST /{API PREFIX}/auth/activate/:code', () => {
+  context('GET /{API PREFIX}/auth/activate/:code', () => {
     let userExistsStub: sinon.SinonStub;
     let userFindOneStub: sinon.SinonStub;
     const activationCode = 'eeHieSoo6Ziequ0opidieVau';
@@ -288,6 +289,63 @@ describe('src/api/controllers/auth', () => {
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.exist.and.match(regex);
+    });
+  });
+
+  context('POST /{API PREFIX}/auth/send/reset/link', () => {
+    let userExistsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userExistsStub = sandbox.stub(User, 'exists');
+    });
+
+    it('should return validation error message if email field is missing', async () => {
+      const res = await request(ExpressApp['app']).post('/api/v2/auth/send/reset/link').send({});
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "email" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error message if no user with given email is found', async () => {
+      userExistsStub.resolves(false);
+      const regex = new RegExp(`'${userEmail}' does not exist.`);
+
+      const res = await request(ExpressApp['app']).post('/api/v2/auth/send/reset/link').send({ email: userEmail });
+
+      expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
+      expect(res.body.message).to.exist.and.match(regex);
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should catch general errors during registration', async () => {
+      userExistsStub.rejects(new Error('SOME GENERAL ERROR'));
+      const res = await request(ExpressApp['app']).post('/api/v2/auth/send/reset/link').send({ email: userEmail });
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should create reset token and send email with a reset password link', async () => {
+      sandbox.stub(Mailer['transporter'], 'sendMail').resolves({ response: 'EMAIL SENT' });
+      userExistsStub.resolves(true);
+      const regex = new RegExp(`has been sent to '${userEmail}'.`);
+      const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
+      const passwordResetSaveStub = sandbox.stub(PasswordReset.prototype, 'save').resolves({
+        email: userName,
+        token: resetToken,
+      });
+      const resetEmailStub = sandbox
+        .stub(MailerService.prototype, 'sendResetPasswordEmail')
+        .resolves({ status: 'success', message: 'Sent email' });
+
+      const res = await request(ExpressApp['app']).post('/api/v2/auth/send/reset/link').send({ email: userEmail });
+
+      expect(res.status).to.equal(HttpStatusCodes.CREATED);
+      expect(res.body.message).to.exist.and.match(regex);
+      expect(passwordResetSaveStub).to.have.been.calledOnce;
+      expect(resetEmailStub).to.have.been.calledOnceWith(resetToken);
     });
   });
 });
