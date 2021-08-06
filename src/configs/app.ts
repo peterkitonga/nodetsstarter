@@ -12,8 +12,8 @@ export default {
   timezone: process.env.APP_TIMEZONE,
   auth: {
     jwt: {
-      secret: process.env.JWT_SECRET ?? 'somesupersecret',
-      lifetime: process.env.JWT_LIFETIME ?? '3600', // in seconds
+      secret: process.env.JWT_SECRET || 'somesupersecret',
+      lifetime: process.env.JWT_LIFETIME || '3600', // in seconds
     },
   },
 };
