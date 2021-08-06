@@ -6,6 +6,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import User from '../../../src/models/user';
 import AuthService from '../../../src/services/auth';
+import PasswordReset from '../../../src/models/password-reset';
 import NotFoundError from '../../../src/common/errors/not-found';
 import ForbiddenError from '../../../src/common/errors/forbidden';
 import UnauthorizedError from '../../../src/common/errors/unauthorized';
@@ -17,6 +18,15 @@ chai.use(chaiAsPromised);
 
 const sandbox = sinon.createSandbox();
 const authService = new AuthService();
+const userDetails = {
+  name: 'John Doe',
+  email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
+  password: 'supersecretpassword',
+};
+const userCredentials = {
+  email: userDetails.email,
+  password: userDetails.password,
+};
 
 describe('src/services/auth: class AuthService', () => {
   afterEach(() => {
@@ -33,11 +43,6 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should return error message if user exists', async () => {
-      const userDetails = {
-        name: 'John Doe',
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-        password: 'supersecretpassword',
-      };
       userExistsStub.resolves(true);
       const registrationResponse = authService.registerUser(userDetails);
 
@@ -46,11 +51,6 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should not save user if password is not successfully hashed', async () => {
-      const userDetails = {
-        name: 'John Doe',
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-        password: 'supersecretpassword',
-      };
       userExistsStub.resolves(false);
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').rejects();
       const registrationResponse = authService.registerUser(userDetails);
@@ -63,11 +63,6 @@ describe('src/services/auth: class AuthService', () => {
 
     it('should return user details after successful save', async () => {
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
-      const userDetails = {
-        name: 'John Doe',
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-        password: 'supersecretpassword',
-      };
       userExistsStub.resolves(false);
       userSaveStub.resolves({
         _id: {
@@ -94,10 +89,6 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should return error message if user is not found', async () => {
-      const userCredentials = {
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-        password: 'supersecretpassword',
-      };
       userFindOneStub.resolves();
       const authenticationResponse = authService.authenticateUser(userCredentials);
 
@@ -106,10 +97,6 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should return error message if password does not match', async () => {
-      const userCredentials = {
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-        password: 'supersecretpassword',
-      };
       userFindOneStub.resolves({
         password: 'hashedpassword',
       });
@@ -122,10 +109,6 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should return a token after successful authentication', async () => {
-      const userCredentials = {
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-        password: 'supersecretpassword',
-      };
       userFindOneStub.resolves({
         _id: {
           $oid: 'someobjectid',
@@ -180,10 +163,6 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should return user email and status on successful activation', async () => {
-      const userDetails = {
-        name: 'John Doe',
-        email: 'disdegnosi@dunsoi.com', // generated from https://emailfake.com/
-      };
       const userSaveStub = sandbox.stub().resolves({
         name: userDetails.name,
         email: userDetails.email,
@@ -200,6 +179,39 @@ describe('src/services/auth: class AuthService', () => {
       expect(userSaveStub).to.have.been.calledOnce;
       expect(activationResponse).to.have.nested.property('data.is_activated').to.equal(true);
       expect(activationResponse).to.have.nested.property('data.email').to.equal(userDetails.email);
+    });
+  });
+
+  context('createResetToken()', () => {
+    let userExistsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userExistsStub = sandbox.stub(User, 'exists');
+    });
+
+    it('should return error message if no user with given email is found', async () => {
+      userExistsStub.resolves(false);
+
+      const resetResponse = authService.createResetToken(userDetails.email);
+
+      await expect(resetResponse).to.eventually.be.rejectedWith(NotFoundError);
+      expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
+    });
+
+    it('should return email and token after successfully creating a reset request', async () => {
+      userExistsStub.resolves(true);
+      const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
+      const passworResetSaveStub = sandbox.stub(PasswordReset.prototype, 'save').resolves({
+        email: userDetails.email,
+        token: resetToken,
+      });
+
+      const resetResponse = await authService.createResetToken(userDetails.email);
+
+      expect(resetResponse).to.have.nested.property('data.token').to.equal(resetToken);
+      expect(resetResponse).to.have.nested.property('data.email').to.equal(userDetails.email);
+      expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
+      expect(passworResetSaveStub).to.have.been.calledOnceWith();
     });
   });
 });
