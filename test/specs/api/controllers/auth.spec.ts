@@ -108,7 +108,7 @@ describe('src/api/controllers/auth', () => {
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
-    it('should register user and send welcome email with verification link', async () => {
+    it('should register user and send welcome email with activation link', async () => {
       sandbox.stub(Mailer['transporter'], 'sendMail').resolves({ response: 'EMAIL SENT' });
       userExistsStub.resolves(false);
       userSaveStub.resolves({
@@ -120,7 +120,7 @@ describe('src/api/controllers/auth', () => {
         password: 'hashedpassword',
         salt: 'somesupersecretsalt',
       });
-      const regex = new RegExp(`Please check your email '${userEmail}' for the verification link`);
+      const regex = new RegExp(`Please check your email '${userEmail}' for the activation link`);
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
       const welcomeEmailStub = sandbox
         .stub(MailerService.prototype, 'sendWelcomeEmail')
@@ -222,6 +222,72 @@ describe('src/api/controllers/auth', () => {
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.data).to.have.deep.property('token');
+    });
+  });
+
+  context('POST /{API PREFIX}/auth/activate/:code', () => {
+    let userExistsStub: sinon.SinonStub;
+    let userFindOneStub: sinon.SinonStub;
+    const activationCode = 'eeHieSoo6Ziequ0opidieVau';
+
+    beforeEach(() => {
+      userExistsStub = sandbox.stub(User, 'exists');
+      userFindOneStub = sandbox.stub(User, 'findOne');
+    });
+
+    it('should return error message if a user with given code is not found', async () => {
+      userExistsStub.resolves(false);
+      const regex = new RegExp(`'${activationCode}' does not exist.`);
+
+      const res = await request(ExpressApp['app']).get(`/api/v2/auth/activate/${activationCode}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
+      expect(res.body.message).to.exist.and.match(regex);
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error message if user is already activated', async () => {
+      userExistsStub.resolves(true);
+      userFindOneStub.resolves({
+        is_activated: true,
+      });
+      const regex = new RegExp(`'${activationCode}' is already activated.`);
+
+      const res = await request(ExpressApp['app']).get(`/api/v2/auth/activate/${activationCode}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.FORBIDDEN);
+      expect(res.body.message).to.exist.and.match(regex);
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should catch general errors during activation', async () => {
+      userExistsStub.resolves(true);
+      userFindOneStub.rejects(new Error('SOME GENERAL ERROR'));
+
+      const res = await request(ExpressApp['app']).get(`/api/v2/auth/activate/${activationCode}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return success message on successful activation', async () => {
+      userExistsStub.resolves(true);
+      const userSaveStub = sandbox.stub().resolves({
+        name: userName,
+        email: userEmail,
+        is_activated: true,
+      });
+      userFindOneStub.resolves({
+        is_activated: false,
+        save: userSaveStub,
+      });
+      const regex = new RegExp(`'${userEmail}' successfully activated.`);
+
+      const res = await request(ExpressApp['app']).get(`/api/v2/auth/activate/${activationCode}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.body.message).to.exist.and.match(regex);
     });
   });
 });
