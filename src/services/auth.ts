@@ -4,8 +4,9 @@ import jwt from 'jsonwebtoken';
 
 import configs from '../configs';
 import User from '../models/user';
-import { UserModel } from '../common/interfaces/database';
+import PasswordReset from '../models/password-reset';
 import { AuthRequest } from '../common/interfaces/requests';
+import { UserModel, PasswordResetModel } from '../common/interfaces/database';
 import { ResultResponse, TokenResponse } from '../common/interfaces/responses';
 
 import NotFoundError from '../common/errors/not-found';
@@ -107,6 +108,24 @@ export default class AuthService {
         }
       } else {
         throw new NotFoundError(`User with activation code '${code}' does not exist.`);
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  public async createResetToken(email: string): Promise<ResultResponse<Partial<PasswordResetModel>>> {
+    try {
+      const isRegistered = await User.exists({ email });
+
+      if (isRegistered) {
+        const buffer = crypto.randomBytes(64);
+        const passwordReset = new PasswordReset({ email, token: buffer.toString('hex') });
+        const { token } = await passwordReset.save();
+
+        return { status: 'success', data: { email, token } };
+      } else {
+        throw new NotFoundError(`User with email '${email}' does not exist.`);
       }
     } catch (err) {
       throw err;
