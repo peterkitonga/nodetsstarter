@@ -24,6 +24,7 @@ const sandbox = sinon.createSandbox();
 const userName = 'John Doe';
 const userEmail = 'disdegnosi@dunsoi.com'; // generated from https://emailfake.com/
 const userPassword = 'supersecretpassword';
+const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
 
 describe('src/api/controllers/auth', () => {
   let winstonLoggerErrorStub: sinon.SinonStub;
@@ -318,7 +319,7 @@ describe('src/api/controllers/auth', () => {
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
-    it('should catch general errors during registration', async () => {
+    it('should catch general errors while creating a reset token', async () => {
       userExistsStub.rejects(new Error('SOME GENERAL ERROR'));
       const res = await request(ExpressApp['app']).post('/api/v2/auth/send/reset/link').send({ email: userEmail });
 
@@ -331,7 +332,6 @@ describe('src/api/controllers/auth', () => {
       sandbox.stub(Mailer['transporter'], 'sendMail').resolves({ response: 'EMAIL SENT' });
       userExistsStub.resolves(true);
       const regex = new RegExp(`has been sent to '${userEmail}'.`);
-      const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
       const passwordResetSaveStub = sandbox.stub(PasswordReset.prototype, 'save').resolves({
         email: userName,
         token: resetToken,
@@ -346,6 +346,95 @@ describe('src/api/controllers/auth', () => {
       expect(res.body.message).to.exist.and.match(regex);
       expect(passwordResetSaveStub).to.have.been.calledOnce;
       expect(resetEmailStub).to.have.been.calledOnceWith(resetToken);
+    });
+  });
+
+  context('POST /{API PREFIX}/auth/reset/password', () => {
+    let userFindOneStub: sinon.SinonStub;
+    let passwordResetFindStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userFindOneStub = sandbox.stub(User, 'findOne');
+      passwordResetFindStub = sandbox.stub(PasswordReset, 'findOne');
+    });
+
+    it('should return validation error message if token field is missing', async () => {
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/reset/password')
+        .send({ password: userPassword, password_confirmation: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "token" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if password field is missing', async () => {
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/reset/password')
+        .send({ token: resetToken, password_confirmation: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "password" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if password confirmation field does not match the password', async () => {
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/reset/password')
+        .send({ token: resetToken, password: userPassword, password_confirmation: 'otherpassword' });
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "password_confirmation" field should match the password');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error message if reset token is not found', async () => {
+      passwordResetFindStub.resolves();
+      const regex = new RegExp(`'${resetToken}' does not exist.`);
+
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/reset/password')
+        .send({ token: resetToken, password: userPassword, password_confirmation: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
+      expect(res.body.message).to.exist.and.match(regex);
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should catch general errors while reseting passwords', async () => {
+      passwordResetFindStub.rejects(new Error('SOME GENERAL ERROR'));
+
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/reset/password')
+        .send({ token: resetToken, password: userPassword, password_confirmation: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should update password and salt', async () => {
+      const regex = new RegExp(`'${userEmail}' has been reset successfully.`);
+      passwordResetFindStub.resolves({ token: resetToken, email: userEmail });
+      sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
+      sandbox.stub(PasswordReset, 'deleteOne').resolves();
+      const userPasswordSaveStub = sandbox.stub().resolves({
+        password: 'hashedpassword',
+        salt: 'SOME SALT STRING',
+      });
+      userFindOneStub.resolves({
+        password: 'hashedpassword',
+        salt: 'SOME SALT STRING',
+        save: userPasswordSaveStub,
+      });
+
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/reset/password')
+        .send({ token: resetToken, password: userPassword, password_confirmation: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.body.message).to.exist.and.match(regex);
+      expect(userPasswordSaveStub).to.have.been.calledOnce;
     });
   });
 });
