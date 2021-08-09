@@ -8,7 +8,7 @@ export interface UserModel extends Document {
   salt: string;
   avatar?: string;
   is_activated?: boolean;
-  created_at?: boolean;
+  created_at?: string;
 }
 
 export interface PasswordResetModel extends Document {
