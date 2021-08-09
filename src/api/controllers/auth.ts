@@ -104,6 +104,29 @@ class AuthController {
       next(err);
     }
   }
+
+  @Autobind
+  public async resetPassword(
+    req: Request<unknown, unknown, ResetPasswordRequest>,
+    res: Response<ResultResponse<null>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { token, password } = req.body;
+      const resetPassword = await this.authService.resetPassword({ token, password });
+
+      res.status(HttpStatusCodes.OK).json({
+        status: 'status',
+        message: `Password for '${resetPassword!.data!.email}' has been reset successfully.`,
+      });
+    } catch (err) {
+      if (!err.statusCode) {
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      }
+
+      next(err);
+    }
+  }
 }
 
 export default new AuthController();
