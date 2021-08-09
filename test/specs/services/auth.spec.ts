@@ -216,33 +216,17 @@ describe('src/services/auth: class AuthService', () => {
   });
 
   context('resetPassword()', () => {
-    let userExistsStub: sinon.SinonStub;
     let userFindOneStub: sinon.SinonStub;
-    let passwordResetExistsStub: sinon.SinonStub;
+    let passwordResetFindStub: sinon.SinonStub;
     const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
 
     beforeEach(() => {
-      userExistsStub = sandbox.stub(User, 'exists');
       userFindOneStub = sandbox.stub(User, 'findOne');
-      passwordResetExistsStub = sandbox.stub(PasswordReset, 'exists');
-    });
-
-    it('should return error message if no user with given email is found', async () => {
-      userExistsStub.resolves(false);
-
-      const passwordResetResponse = authService.resetPassword({
-        token: resetToken,
-        email: userDetails.email,
-        password: userDetails.password,
-      });
-
-      await expect(passwordResetResponse).to.eventually.be.rejectedWith(NotFoundError);
-      expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
+      passwordResetFindStub = sandbox.stub(PasswordReset, 'findOne');
     });
 
     it('should return error message if reset token is not found', async () => {
-      userExistsStub.resolves(true);
-      passwordResetExistsStub.resolves(false);
+      passwordResetFindStub.resolves();
 
       const passwordResetResponse = authService.resetPassword({
         token: resetToken,
@@ -251,12 +235,11 @@ describe('src/services/auth: class AuthService', () => {
       });
 
       await expect(passwordResetResponse).to.eventually.be.rejectedWith(NotFoundError);
-      expect(passwordResetExistsStub).to.have.been.calledOnce;
+      expect(passwordResetFindStub).to.have.been.calledOnce;
     });
 
     it('should not store the new password if hashing is unsucccessful', async () => {
-      userExistsStub.resolves(true);
-      passwordResetExistsStub.resolves(true);
+      passwordResetFindStub.resolves({ token: resetToken, email: userDetails.email });
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').rejects(new Error('HASH ERROR'));
 
       const passwordResetResponse = authService.resetPassword({
@@ -270,8 +253,7 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should hash, store the new password and delete reset token', async () => {
-      userExistsStub.resolves(true);
-      passwordResetExistsStub.resolves(true);
+      passwordResetFindStub.resolves({ token: resetToken, email: userDetails.email });
       sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
       const passwordResetDeleteStub = sandbox.stub(PasswordReset, 'deleteOne').resolves();
       const userPasswordSaveStub = sandbox.stub().resolves({
@@ -293,7 +275,7 @@ describe('src/services/auth: class AuthService', () => {
       await expect(passwordResetResponse)
         .to.eventually.be.fulfilled.with.nested.property('data.email')
         .to.equal(userDetails.email);
-      expect(passwordResetExistsStub).to.have.been.calledOnce;
+      expect(passwordResetFindStub).to.have.been.calledOnce;
       expect(userPasswordSaveStub).to.have.been.calledOnce;
       expect(passwordResetDeleteStub).to.have.been.calledOnce;
     });

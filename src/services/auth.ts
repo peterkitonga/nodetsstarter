@@ -134,33 +134,27 @@ export default class AuthService {
 
   public async resetPassword({
     token,
-    email,
     password,
   }: ResetPasswordRequest): Promise<ResultResponse<Partial<PasswordResetModel>>> {
     try {
-      const isRegistered = await User.exists({ email });
+      const isValidToken = await PasswordReset.findOne({ token });
 
-      if (isRegistered) {
-        const hasToken = await PasswordReset.exists({ token });
+      if (isValidToken) {
+        const { email } = isValidToken;
+        const buffer = crypto.randomBytes(64);
+        const salt = buffer.toString('hex');
+        const hashedPassword = await bcrypt.hash(password!, 12);
 
-        if (hasToken) {
-          const buffer = crypto.randomBytes(64);
-          const salt = buffer.toString('hex');
-          const hashedPassword = await bcrypt.hash(password!, 12);
+        const user = await User.findOne({ email });
+        user!.salt = salt;
+        user!.password = hashedPassword;
+        await user!.save();
 
-          const user = await User.findOne({ email });
-          user!.salt = salt;
-          user!.password = hashedPassword;
-          await user!.save();
+        await PasswordReset.deleteOne({ email });
 
-          await PasswordReset.deleteOne({ email });
-
-          return { status: 'success', data: { email } };
-        } else {
-          throw new NotFoundError(`Password reset token '${token}' does not exist.`);
-        }
+        return { status: 'success', data: { email } };
       } else {
-        throw new NotFoundError(`User with email '${email}' does not exist.`);
+        throw new NotFoundError(`Password reset token '${token}' does not exist.`);
       }
     } catch (err) {
       throw err;
