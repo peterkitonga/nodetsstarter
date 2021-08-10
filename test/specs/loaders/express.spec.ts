@@ -33,6 +33,7 @@ describe('src/loaders/express: class ExpressApp', () => {
     let databaseConnectionStub: sinon.SinonStub;
     let staticFilesStub: sinon.SinonStub;
     let bodyParserStub: sinon.SinonStub;
+    let cookieParser: sinon.SinonStub;
 
     beforeEach(() => {
       listenStub = sandbox.stub(ExpressApp, 'listen');
@@ -44,6 +45,7 @@ describe('src/loaders/express: class ExpressApp', () => {
       databaseConnectionStub = sandbox.stub(ExpressApp, 'connectDatabase');
       staticFilesStub = sandbox.stub(ExpressApp, 'serveStaticFiles');
       bodyParserStub = sandbox.stub(ExpressApp, 'setupBodyParser');
+      cookieParser = sandbox.stub(ExpressApp, 'setupCookieParser');
     });
 
     it('should initialize server correctly', async () => {
@@ -98,6 +100,12 @@ describe('src/loaders/express: class ExpressApp', () => {
       await ExpressApp.init();
 
       expect(bodyParserStub).to.be.calledOnce;
+    });
+
+    it('should register the cookie parser middleware', async () => {
+      await ExpressApp.init();
+
+      expect(cookieParser).to.be.calledOnce;
     });
   });
 
@@ -204,14 +212,27 @@ describe('src/loaders/express: class ExpressApp', () => {
   context('setupBodyParser()', () => {
     it('should configure the body parser middleware with limit', () => {
       const bodyLimit = '10mb';
-      const bodyLimitStub = sandbox.stub(configs.filesystems, 'limit').value(bodyLimit);
-      const appUseStub = sandbox.stub(ExpressApp['app'], 'use');
       const expressJsonStub = sandbox.stub(express, 'json');
+      const appUseStub = sandbox.stub(ExpressApp['app'], 'use');
+      sandbox.stub(configs.filesystems, 'limit').value(bodyLimit);
 
       ExpressApp.setupBodyParser();
 
       expect(appUseStub).to.have.been.calledOnce;
       expect(expressJsonStub).to.have.been.calledOnceWith({ limit: bodyLimit });
+    });
+  });
+
+  context('setupCookieParser()', () => {
+    it('should configure the cookie parser middleware', () => {
+      const appUseStub = sandbox.stub(ExpressApp['app'], 'use');
+
+      ExpressApp.setupCookieParser();
+
+      const lastArgument = appUseStub.getCall(0).args[0];
+
+      expect(appUseStub).to.have.been.calledOnce;
+      expect(lastArgument).to.exist.and.be.an.instanceOf(Function);
     });
   });
 
