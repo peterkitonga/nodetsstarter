@@ -4,6 +4,7 @@ import { RefreshTokenModel } from '../common/interfaces/database';
 const schema = new Schema<RefreshTokenModel>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    expired_at: { type: Date, default: Date.now(), required: true },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
