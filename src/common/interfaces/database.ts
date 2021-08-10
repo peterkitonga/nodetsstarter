@@ -22,4 +22,5 @@ export interface RefreshTokenModel extends Document {
   _id: string;
   user: UserModel;
   created_at?: string;
+  expires_at?: string;
 }
