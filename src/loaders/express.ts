@@ -4,6 +4,7 @@ import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import dotenvExpand from 'dotenv-expand';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
 
@@ -32,6 +33,7 @@ class ExpressApp {
 
     this.setupCors();
     this.setupHelmet();
+    this.setupCookieParser();
 
     this.handleHomeRoute();
     this.handleAppRoutes();
@@ -89,6 +91,10 @@ class ExpressApp {
 
   public setupBodyParser(): void {
     this.app.use(json({ limit: configs.filesystems.limit }));
+  }
+
+  public setupCookieParser(): void {
+    this.app.use(cookieParser());
   }
 
   public handleHomeRoute(): void {
