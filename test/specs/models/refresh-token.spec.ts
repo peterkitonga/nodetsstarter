@@ -12,6 +12,7 @@ describe('src/models/refresh-token', () => {
       const validation = refreshToken.validateSync();
 
       expect(validation!.errors.user).to.exist;
+      expect(validation!.errors.expired_at).to.exist;
     });
   });
 });
