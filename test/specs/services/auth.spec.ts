@@ -1,6 +1,7 @@
 import chai from 'chai';
 import sinon from 'sinon';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -315,6 +316,55 @@ describe('src/services/auth: class AuthService', () => {
       expect(passwordResetFindStub).to.have.been.calledOnce;
       expect(userPasswordSaveStub).to.have.been.calledOnce;
       expect(passwordResetDeleteStub).to.have.been.calledOnce;
+    });
+  });
+
+  context('refreshToken()', () => {
+    let jwtSignStub: sinon.SinonStub;
+    let jwtVerifyStub: sinon.SinonStub;
+    let userFindByIdStub: sinon.SinonStub;
+    let refreshTokenSaveStub: sinon.SinonStub;
+    let refreshTokenFindStub: sinon.SinonStub;
+    let refreshTokenDeleteStub: sinon.SinonStub;
+    const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
+
+    beforeEach(() => {
+      jwtSignStub = sandbox.stub(jwt, 'sign');
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      userFindByIdStub = sandbox.stub(User, 'findById');
+      refreshTokenFindStub = sandbox.stub(RefreshToken, 'findOne');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
+    });
+
+    it('should return error if token verification fails', async () => {
+      jwtVerifyStub.returns(undefined);
+
+      const refreshTokenResponse = authService.refreshToken(jwtToken);
+
+      await expect(refreshTokenResponse).to.eventually.be.rejectedWith(UnauthorizedError);
+    });
+
+    it('should generate new tokens and delete old refresh tokens', async () => {
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
+      refreshTokenFindStub.resolves({ user: 'someuserobjectid' });
+      refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
+      userFindByIdStub.resolves({
+        _id: 'someobjectid',
+        email: userCredentials.email,
+        salt: 'SOME SALT STRING',
+      });
+
+      const refreshTokenResponse = authService.refreshToken(jwtToken);
+
+      await expect(refreshTokenResponse).to.eventually.be.fulfilled.with.nested.property('data.token');
+      await expect(refreshTokenResponse).to.eventually.be.fulfilled.with.nested.property('data.refresh_token');
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(refreshTokenFindStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
+      expect(refreshTokenSaveStub).to.have.been.calledOnce;
+      expect(jwtSignStub).to.have.been.calledTwice;
     });
   });
 });
