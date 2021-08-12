@@ -6,6 +6,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import User from '../../../src/models/user';
 import AuthService from '../../../src/services/auth';
+import RefreshToken from '../../../src/models/refresh-token';
 import PasswordReset from '../../../src/models/password-reset';
 import NotFoundError from '../../../src/common/errors/not-found';
 import ForbiddenError from '../../../src/common/errors/forbidden';
@@ -83,24 +84,42 @@ describe('src/services/auth: class AuthService', () => {
 
   context('authenticateUser()', () => {
     let userFindOneStub: sinon.SinonStub;
+    let bcryptCompareStub: sinon.SinonStub;
+    let refreshTokenSaveStub: sinon.SinonStub;
 
     beforeEach(() => {
       userFindOneStub = sandbox.stub(User, 'findOne');
+      bcryptCompareStub = sandbox.stub(bcrypt, 'compare');
+      refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
     });
 
     it('should return error message if user is not found', async () => {
       userFindOneStub.resolves();
+
       const authenticationResponse = authService.authenticateUser(userCredentials);
 
       await expect(authenticationResponse).to.eventually.be.rejectedWith(NotFoundError);
       expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
     });
 
+    it('should return error message if user account is not activated', async () => {
+      userFindOneStub.resolves({
+        is_activated: false,
+      });
+
+      const authenticationResponse = authService.authenticateUser(userCredentials);
+
+      await expect(authenticationResponse).to.eventually.be.rejectedWith(ForbiddenError);
+      expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
+    });
+
     it('should return error message if password does not match', async () => {
       userFindOneStub.resolves({
+        is_activated: true,
         password: 'hashedpassword',
       });
-      const bcryptCompareStub = sandbox.stub(bcrypt, 'compare').resolves(false);
+      bcryptCompareStub.resolves(false);
+
       const authenticationResponse = authService.authenticateUser(userCredentials);
 
       await expect(authenticationResponse).to.eventually.be.rejectedWith(UnauthorizedError);
@@ -108,11 +127,26 @@ describe('src/services/auth: class AuthService', () => {
       expect(bcryptCompareStub).to.have.been.calledOnceWith(userCredentials.password, 'hashedpassword');
     });
 
+    it('should return error message if refresh token is not created', async () => {
+      userFindOneStub.resolves({
+        _id: 'someobjectid',
+        is_activated: true,
+        password: 'hashedpassword',
+      });
+      bcryptCompareStub.resolves(true);
+      refreshTokenSaveStub.rejects(new Error('SOME ERROR'));
+
+      const authenticationResponse = authService.authenticateUser(userCredentials);
+
+      await expect(authenticationResponse).to.eventually.be.rejectedWith(Error);
+      expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
+      expect(bcryptCompareStub).to.have.been.calledOnceWith(userCredentials.password, 'hashedpassword');
+      expect(refreshTokenSaveStub).to.have.been.calledOnce;
+    });
+
     it('should return a token after successful authentication', async () => {
       userFindOneStub.resolves({
-        _id: {
-          $oid: 'someobjectid',
-        },
+        _id: 'someobjectid',
         name: 'John Doe',
         email: userCredentials.email,
         password: 'hashedpassword',
@@ -120,12 +154,15 @@ describe('src/services/auth: class AuthService', () => {
         is_activated: true,
         created_at: 'SOME DATE',
       });
-      const bcryptCompareStub = sandbox.stub(bcrypt, 'compare').resolves(true);
+      bcryptCompareStub.resolves(true);
+      refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+
       const authenticationResponse = authService.authenticateUser(userCredentials);
 
       await expect(authenticationResponse)
         .to.eventually.be.fulfilled.with.nested.property('data.token')
         .to.be.a('string');
+      expect(refreshTokenSaveStub).to.have.been.calledOnce;
       expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
       expect(bcryptCompareStub).to.have.been.calledOnceWith(userCredentials.password, 'hashedpassword');
     });
