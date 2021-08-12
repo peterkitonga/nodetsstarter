@@ -6,6 +6,7 @@ import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
 import { AuthRequest, ActivationRequest, ResetPasswordRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
+import UnauthorizedError from '../../common/errors/unauthorized';
 
 class AuthController {
   private authService: AuthService;
@@ -124,6 +125,34 @@ class AuthController {
         status: 'status',
         message: `Password for '${resetPassword!.data!.email}' has been reset successfully.`,
       });
+    } catch (err) {
+      if (!err.statusCode) {
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      }
+
+      next(err);
+    }
+  }
+
+  @Autobind
+  public async refreshToken(
+    req: Request,
+    res: Response<ResultResponse<Partial<TokenResponse>>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      if (req.cookies && req.cookies.refresh_token) {
+        const refreshToken = await this.authService.refreshToken(req.cookies.refresh_token);
+        const { token, refresh_token, lifetime } = refreshToken.data!;
+
+        res.cookie('refresh_token', refresh_token, {
+          maxAge: Number(lifetime) * 2 * 1000,
+          httpOnly: true,
+        });
+        res.status(HttpStatusCodes.CREATED).json({ status: 'success', data: { token, lifetime } });
+      } else {
+        throw new UnauthorizedError(`Authentication failed. Please login.`);
+      }
     } catch (err) {
       if (!err.statusCode) {
         err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
