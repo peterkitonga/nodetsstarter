@@ -2,6 +2,7 @@ import chai from 'chai';
 import sinon from 'sinon';
 import bcrypt from 'bcryptjs';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -35,6 +36,7 @@ describe('src/api/controllers/auth', () => {
     winstonLoggerErrorStub = sandbox.stub(WinstonLogger, 'error');
 
     ExpressApp.setupBodyParser();
+    ExpressApp.setupCookieParser();
     ExpressApp.handleAppRoutes();
     ExpressApp.handleErrorMiddleware();
   });
@@ -474,5 +476,86 @@ describe('src/api/controllers/auth', () => {
       expect(res.body.message).to.exist.and.match(regex);
       expect(userPasswordSaveStub).to.have.been.calledOnce;
     });
+  });
+
+  context('GET /{API PREFIX}/auth/refresh/token', () => {
+    let jwtVerifyStub: sinon.SinonStub;
+    let userFindByIdStub: sinon.SinonStub;
+    let refreshTokenFindStub: sinon.SinonStub;
+    let refreshTokenSaveStub: sinon.SinonStub;
+    let refreshTokenDeleteStub: sinon.SinonStub;
+    const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
+
+    beforeEach(() => {
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      userFindByIdStub = sandbox.stub(User, 'findById');
+      refreshTokenFindStub = sandbox.stub(RefreshToken, 'findOne');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
+    });
+
+    it('should return error if refresh token cookie is missing', async () => {
+      const res = await request(ExpressApp['app']).get('/api/v2/auth/refresh/token');
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.to.equal('Authentication failed. Please login.');
+    });
+
+    it('should return error if refresh token is invalid', async () => {
+      jwtVerifyStub.returns(undefined);
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/refresh/token')
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.to.equal('Authentication failed. Please login.');
+      expect(jwtVerifyStub).to.have.been.calledOnceWith(jwtToken);
+    });
+
+    it('should return error if generation of token is unsuccessful', async () => {
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
+      refreshTokenFindStub.resolves({ user: 'someuserobjectid' });
+      refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      userFindByIdStub.resolves({
+        _id: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      const jwtSignStub = sandbox.stub(jwt, 'sign').throws(new Error('SOME ERROR'));
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/refresh/token')
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(jwtSignStub).to.have.been.calledOnce;
+    });
+
+    it('should return new token and add refresh token cookie', async () => {
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
+      refreshTokenFindStub.resolves({ user: 'someuserobjectid' });
+      refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      userFindByIdStub.resolves({
+        _id: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/refresh/token')
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
+
+      expect(res.status).to.equal(HttpStatusCodes.CREATED);
+      expect(res.body.data).to.have.deep.property('token');
+      expect(res.headers['set-cookie']).to.exist.and.have.lengthOf(1);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(refreshTokenFindStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
+      expect(refreshTokenSaveStub).to.have.been.calledOnce;
+    });
+
+    it('should create a new token and refresh token');
   });
 });
