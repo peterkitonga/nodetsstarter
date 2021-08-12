@@ -49,39 +49,27 @@ export default class AuthService {
           const isMatched = await bcrypt.compare(password, user.password);
 
           if (isMatched) {
-            const storedRefreshToken = await this.createRefreshToken(user._id.toString());
-
-            const token = jwt.sign(
-              {
-                auth: user._id.toString(),
-                email,
-                salt: user.salt,
-              },
-              configs.app.auth.jwt.secret,
-              { expiresIn: configs.app.auth.jwt.lifetime },
-            );
-
-            const refreshToken = jwt.sign(
-              {
-                token: storedRefreshToken.data!._id.toString(),
-              },
-              configs.app.auth.jwt.secret,
-              { expiresIn: Number(configs.app.auth.jwt.lifetime) * 2 },
-            );
-
             const { name, avatar, is_activated, created_at } = user;
-
-            const auth = {
-              name,
-              email,
-              avatar: avatar ?? '',
-              is_activated,
-              created_at,
-            };
+            const generatedTokens = await this.generateTokens({
+              user_id: user!._id.toString(),
+              email: user!.email,
+              salt: user!.salt,
+            });
 
             return {
               status: 'success',
-              data: { token, refresh_token: refreshToken, lifetime: configs.app.auth.jwt.lifetime, auth },
+              data: {
+                token: generatedTokens.data!.token!,
+                refresh_token: generatedTokens.data!.refresh_token!,
+                lifetime: configs.app.auth.jwt.lifetime,
+                auth: {
+                  name,
+                  email,
+                  avatar: avatar || '',
+                  is_activated,
+                  created_at,
+                },
+              },
             };
           } else {
             throw new UnauthorizedError('Unauthorised. User password entered is incorrect.');
@@ -179,6 +167,39 @@ export default class AuthService {
     }
   }
 
+  public async refreshToken(encryptedToken: string): Promise<ResultResponse<Partial<TokenResponse>>> {
+    try {
+      const isDecodedToken = jwt.verify(encryptedToken, configs.app.auth.jwt.secret);
+
+      if (isDecodedToken) {
+        const decodedToken = <{ token: string }>isDecodedToken;
+
+        const existingToken = await RefreshToken.findOne({ _id: decodedToken.token });
+        const authUser = await User.findById(existingToken!.user);
+        await RefreshToken.deleteMany({ user: existingToken!.user });
+
+        const generatedTokens = await this.generateTokens({
+          user_id: authUser!._id.toString(),
+          email: authUser!.email,
+          salt: authUser!.salt,
+        });
+
+        return {
+          status: 'success',
+          data: {
+            token: generatedTokens.data!.token,
+            refresh_token: generatedTokens.data!.refresh_token,
+            lifetime: configs.app.auth.jwt.lifetime,
+          },
+        };
+      } else {
+        throw new UnauthorizedError(`Authentication failed. Please login.`);
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
   private async createRefreshToken(userId: string): Promise<ResultResponse<RefreshTokenModel>> {
     try {
       const additionalTime = Number(configs.app.auth.jwt.lifetime) * 2 * 1000;
@@ -190,6 +211,37 @@ export default class AuthService {
       const result = await refreshToken.save();
 
       return { status: 'success', data: result };
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  private async generateTokens({
+    user_id,
+    email,
+    salt,
+  }: Record<'user_id' | 'email' | 'salt', string>): Promise<ResultResponse<Partial<TokenResponse>>> {
+    try {
+      const newToken = await this.createRefreshToken(user_id);
+      const refreshToken = jwt.sign(
+        {
+          token: newToken.data!._id.toString(),
+        },
+        configs.app.auth.jwt.secret,
+        { expiresIn: Number(configs.app.auth.jwt.lifetime) * 2 },
+      );
+
+      const token = jwt.sign(
+        {
+          auth: user_id,
+          email,
+          salt,
+        },
+        configs.app.auth.jwt.secret,
+        { expiresIn: Number(configs.app.auth.jwt.lifetime) },
+      );
+
+      return { status: 'success', data: { token, refresh_token: refreshToken } };
     } catch (err) {
       throw err;
     }
