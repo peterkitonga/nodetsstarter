@@ -4,9 +4,10 @@ import jwt from 'jsonwebtoken';
 
 import configs from '../configs';
 import User from '../models/user';
+import RefreshToken from '../models/refresh-token';
 import PasswordReset from '../models/password-reset';
 import { AuthRequest, ResetPasswordRequest } from '../common/interfaces/requests';
-import { UserModel, PasswordResetModel } from '../common/interfaces/database';
+import { UserModel, PasswordResetModel, RefreshTokenModel } from '../common/interfaces/database';
 import { ResultResponse, TokenResponse } from '../common/interfaces/responses';
 
 import NotFoundError from '../common/errors/not-found';
@@ -44,35 +45,52 @@ export default class AuthService {
       const user = await User.findOne({ email });
 
       if (user) {
-        const isMatched = await bcrypt.compare(password, user.password);
+        if (user.is_activated) {
+          const isMatched = await bcrypt.compare(password, user.password);
 
-        if (isMatched) {
-          const token = jwt.sign(
-            {
-              auth: user._id.toString(),
+          if (isMatched) {
+            const storedRefreshToken = await this.createRefreshToken(user._id.toString());
+
+            const token = jwt.sign(
+              {
+                auth: user._id.toString(),
+                email,
+                salt: user.salt,
+              },
+              configs.app.auth.jwt.secret,
+              { expiresIn: configs.app.auth.jwt.lifetime },
+            );
+
+            const refreshToken = jwt.sign(
+              {
+                token: storedRefreshToken.data!._id.toString(),
+              },
+              configs.app.auth.jwt.secret,
+              { expiresIn: Number(configs.app.auth.jwt.lifetime) * 2 },
+            );
+
+            const { name, avatar, is_activated, created_at } = user;
+
+            const auth = {
+              name,
               email,
-              salt: user.salt,
-            },
-            configs.app.auth.jwt.secret,
-            { expiresIn: configs.app.auth.jwt.lifetime },
-          );
+              avatar: avatar ?? '',
+              is_activated,
+              created_at,
+            };
 
-          const { name, avatar, is_activated, created_at } = user;
-
-          const auth = {
-            name,
-            email,
-            avatar: avatar ?? '',
-            is_activated,
-            created_at,
-          };
-
-          return { status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime, auth } };
+            return {
+              status: 'success',
+              data: { token, refresh_token: refreshToken, lifetime: configs.app.auth.jwt.lifetime, auth },
+            };
+          } else {
+            throw new UnauthorizedError('Unauthorised. User password entered is incorrect.');
+          }
         } else {
-          throw new UnauthorizedError('Unauthorised. User password entered is incorrect.');
+          throw new ForbiddenError(`User with email '${email}' is not activated yet.`);
         }
       } else {
-        throw new NotFoundError(`Unauthorised. User with email '${email}' does not exist.`);
+        throw new NotFoundError(`User with email '${email}' does not exist.`);
       }
     } catch (err) {
       throw err;
@@ -156,6 +174,22 @@ export default class AuthService {
       } else {
         throw new NotFoundError(`Password reset token '${token}' does not exist.`);
       }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  private async createRefreshToken(userId: string): Promise<ResultResponse<RefreshTokenModel>> {
+    try {
+      const additionalTime = Number(configs.app.auth.jwt.lifetime) * 2 * 1000;
+
+      const refreshToken = new RefreshToken({
+        user: userId,
+        expires_at: Date.now() + additionalTime,
+      });
+      const result = await refreshToken.save();
+
+      return { status: 'success', data: result };
     } catch (err) {
       throw err;
     }

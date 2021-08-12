@@ -12,6 +12,7 @@ import Mailer from '../../../../src/loaders/nodemailer';
 import ExpressApp from '../../../../src/loaders/express';
 import MailerService from '../../../../src/services/mailer';
 import WinstonLogger from '../../../../src/loaders/winston';
+import RefreshToken from '../../../../src/models/refresh-token';
 import PasswordReset from '../../../../src/models/password-reset';
 import { HttpStatusCodes } from '../../../../src/common/enums/http';
 
@@ -176,7 +177,21 @@ describe('src/api/controllers/auth', () => {
         .send({ email: userEmail, password: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
-      expect(res.body.message).to.match(/Unauthorised/);
+      expect(res.body.message).to.match(/does not exist./);
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error message if user account is not activated', async () => {
+      userFindOneStub.resolves({
+        is_activated: false,
+      });
+
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/login')
+        .send({ email: userEmail, password: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.FORBIDDEN);
+      expect(res.body.message).to.match(/is not activated yet/);
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -184,7 +199,9 @@ describe('src/api/controllers/auth', () => {
       bcryptCompareStub.resolves(false);
       userFindOneStub.resolves({
         password: 'hashedpassword',
+        is_activated: true,
       });
+
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
         .send({ email: userEmail, password: 'somewrongpassword' });
@@ -196,6 +213,24 @@ describe('src/api/controllers/auth', () => {
 
     it('should catch general errors during authentication', async () => {
       userFindOneStub.rejects(new Error('SOME GENERAL ERROR'));
+
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/login')
+        .send({ email: userEmail, password: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error if refresh token is not generated', async () => {
+      bcryptCompareStub.resolves(true);
+      userFindOneStub.resolves({
+        password: 'hashedpassword',
+        is_activated: true,
+      });
+      sandbox.stub(RefreshToken.prototype, 'save').rejects(new Error('SOME ERROR'));
+
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
         .send({ email: userEmail, password: userPassword });
@@ -218,11 +253,14 @@ describe('src/api/controllers/auth', () => {
         is_activated: true,
         created_at: 'SOME DATE',
       });
+      sandbox.stub(RefreshToken.prototype, 'save').resolves({ _id: 'someobjectid' });
+
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
         .send({ email: userEmail, password: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.headers['set-cookie']).to.exist.and.have.lengthOf(1);
       expect(res.body.data).to.have.deep.property('token');
     });
   });

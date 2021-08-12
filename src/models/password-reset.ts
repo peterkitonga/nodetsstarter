@@ -7,6 +7,7 @@ const schema = new Schema<PasswordResetModel>(
     token: { type: String, required: true },
   },
   {
+    collection: 'password_resets',
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   },
 );

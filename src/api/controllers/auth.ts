@@ -42,14 +42,19 @@ class AuthController {
   @Autobind
   public async authenticateUser(
     req: Request<unknown, unknown, AuthRequest>,
-    res: Response<ResultResponse<TokenResponse>>,
+    res: Response<ResultResponse<Partial<TokenResponse>>>,
     next: NextFunction,
   ): Promise<void> {
     try {
       const request = req.body;
       const authentication = await this.authService.authenticateUser(request);
+      const { token, refresh_token, lifetime, auth } = authentication.data!;
 
-      res.status(HttpStatusCodes.OK).json(authentication);
+      res.cookie('refresh_token', refresh_token, {
+        maxAge: Number(lifetime) * 2 * 1000,
+        httpOnly: true,
+      });
+      res.status(HttpStatusCodes.OK).json({ status: 'success', data: { token, lifetime, auth } });
     } catch (err) {
       if (!err.statusCode) {
         err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
