@@ -8,6 +8,7 @@ export interface ResultResponse<DataType> {
 
 export interface TokenResponse {
   token: string;
+  refresh_token: string;
   lifetime: string;
   auth: Partial<UserModel>;
 }
