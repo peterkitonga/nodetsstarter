@@ -175,9 +175,8 @@ export default class AuthService {
       if (isDecodedToken) {
         const decodedToken = <{ token: string }>isDecodedToken;
 
-        const existingToken = await RefreshToken.findOne({ _id: decodedToken.token });
+        const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
         const authUser = await User.findById(existingToken!.user);
-        await RefreshToken.deleteMany({ user: existingToken!.user });
 
         const generatedTokens = await this.generateTokens({
           user_id: authUser!._id.toString(),
