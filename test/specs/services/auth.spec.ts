@@ -325,15 +325,13 @@ describe('src/services/auth: class AuthService', () => {
     let jwtVerifyStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
-    let refreshTokenFindStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
       jwtSignStub = sandbox.stub(jwt, 'sign');
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
       userFindByIdStub = sandbox.stub(User, 'findById');
-      refreshTokenFindStub = sandbox.stub(RefreshToken, 'findOne');
-      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'findByIdAndDelete');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
     });
 
@@ -345,11 +343,10 @@ describe('src/services/auth: class AuthService', () => {
       await expect(refreshTokenResponse).to.eventually.be.rejectedWith(UnauthorizedError);
     });
 
-    it('should generate new tokens and delete old refresh tokens', async () => {
+    it('should generate new tokens and delete old refresh token', async () => {
       jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
-      refreshTokenFindStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
-      refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
+      refreshTokenDeleteStub.resolves({ user: 'someobjectid' });
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userCredentials.email,
@@ -361,7 +358,6 @@ describe('src/services/auth: class AuthService', () => {
       await expect(refreshTokenResponse).to.eventually.be.fulfilled.with.nested.property('data.token');
       await expect(refreshTokenResponse).to.eventually.be.fulfilled.with.nested.property('data.refresh_token');
       expect(userFindByIdStub).to.have.been.calledOnce;
-      expect(refreshTokenFindStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
       expect(jwtSignStub).to.have.been.calledTwice;

@@ -482,15 +482,13 @@ describe('src/api/controllers/auth', () => {
   context('GET /{API PREFIX}/auth/refresh/token', () => {
     let jwtVerifyStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
-    let refreshTokenFindStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
       userFindByIdStub = sandbox.stub(User, 'findById');
-      refreshTokenFindStub = sandbox.stub(RefreshToken, 'findOne');
-      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'findByIdAndDelete');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
     });
 
@@ -515,7 +513,7 @@ describe('src/api/controllers/auth', () => {
 
     it('should return error if generation of token is unsuccessful', async () => {
       jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
-      refreshTokenFindStub.resolves({ user: 'someuserobjectid' });
+      refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       userFindByIdStub.resolves({
         _id: 'someobjectid',
@@ -534,7 +532,7 @@ describe('src/api/controllers/auth', () => {
 
     it('should return new token and add refresh token cookie', async () => {
       jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
-      refreshTokenFindStub.resolves({ user: 'someuserobjectid' });
+      refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       userFindByIdStub.resolves({
         _id: 'someobjectid',
@@ -551,7 +549,6 @@ describe('src/api/controllers/auth', () => {
       expect(res.headers['set-cookie']).to.exist.and.have.lengthOf(1);
       expect(jwtVerifyStub).to.have.been.calledOnce;
       expect(userFindByIdStub).to.have.been.calledOnce;
-      expect(refreshTokenFindStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
     });
