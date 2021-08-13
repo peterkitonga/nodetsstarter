@@ -12,11 +12,12 @@
     "paths": {
       "*": ["node_modules/*"]
     },
+    "typeRoots": ["src/@types/*", "node_modules/@types/*"],
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules/", "test/"]
+  "exclude": ["node_modules/*", "test/*"]
 }
