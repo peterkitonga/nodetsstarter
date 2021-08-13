@@ -3,21 +3,21 @@
     "target": "ES2018",
     "module": "commonjs",
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "./dist/",
     "removeComments": true,
     "noEmitOnError": true,
     "strict": true,
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*"]
+      "*": ["node_modules/"]
     },
-    "typeRoots": ["src/@types/*", "node_modules/@types/*"],
+    "typeRoots": ["src/@types/", "node_modules/@types/"],
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules/*", "test/*"]
+  "exclude": ["node_modules/", "test/"]
 }
