@@ -2,10 +2,10 @@ import chai from 'chai';
 import sinon from 'sinon';
 import bcrypt from 'bcryptjs';
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '../../../../src/configs';
 import User from '../../../../src/models/user';
@@ -27,6 +27,7 @@ const userName = 'John Doe';
 const userEmail = 'disdegnosi@dunsoi.com'; // generated from https://emailfake.com/
 const userPassword = 'supersecretpassword';
 const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
+const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
 describe('src/api/controllers/auth', () => {
   let winstonLoggerErrorStub: sinon.SinonStub;
@@ -484,7 +485,6 @@ describe('src/api/controllers/auth', () => {
     let refreshTokenFindStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
-    const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
@@ -554,6 +554,109 @@ describe('src/api/controllers/auth', () => {
       expect(refreshTokenFindStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
+    });
+  });
+
+  context('GET /{API PREFIX}/auth/logout', () => {
+    let jwtVerifyStub: sinon.SinonStub;
+    let userFindByIdStub: sinon.SinonStub;
+    let refreshTokenDeleteStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      userFindByIdStub = sandbox.stub(User, 'findById');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+    });
+
+    it('should return error if bearer token is missing', async () => {
+      const res = await request(ExpressApp['app']).get('/api/v2/auth/logout');
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Bearer token is required/);
+    });
+
+    it('should return error if bearer token is not decoded', async () => {
+      jwtVerifyStub.returns(undefined);
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Authentication failed/);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+    });
+
+    it('should return error if bearer token has expired', async () => {
+      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Bearer token is expired/);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+    });
+
+    it('should catch errors if bearer token verification fails', async () => {
+      jwtVerifyStub.throws(new Error('JWT ERROR'));
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.equal('JWT ERROR');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+    });
+
+    it('should catch errors if deletion of refresh token fails', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      userFindByIdStub.resolves({
+        _id: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      refreshTokenDeleteStub.rejects(new Error('SOME ERROR'));
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
+    });
+
+    it('should clear all cookies and remove refresh tokens', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      userFindByIdStub.resolves({
+        _id: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.body.message).to.exist.and.equal('Successfully logged out.');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
     });
   });
 });
