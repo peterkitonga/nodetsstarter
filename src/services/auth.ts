@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 import configs from '../configs';
 import User from '../models/user';
@@ -195,6 +196,17 @@ export default class AuthService {
       } else {
         throw new UnauthorizedError(`Authentication failed. Please login.`);
       }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  public async logoutUser(userId: string): Promise<ResultResponse<null>> {
+    try {
+      const authUser = await User.findById(userId);
+      await RefreshToken.deleteMany({ user: authUser! });
+
+      return { status: 'success', message: 'Successfully logged out.' };
     } catch (err) {
       throw err;
     }

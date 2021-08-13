@@ -555,7 +555,5 @@ describe('src/api/controllers/auth', () => {
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
     });
-
-    it('should create a new token and refresh token');
   });
 });
