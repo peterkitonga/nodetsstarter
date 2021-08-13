@@ -29,6 +29,7 @@ const userCredentials = {
   email: userDetails.email,
   password: userDetails.password,
 };
+const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
 describe('src/services/auth: class AuthService', () => {
   afterEach(() => {
@@ -326,7 +327,6 @@ describe('src/services/auth: class AuthService', () => {
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenFindStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
-    const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
     beforeEach(() => {
       jwtSignStub = sandbox.stub(jwt, 'sign');
@@ -365,6 +365,41 @@ describe('src/services/auth: class AuthService', () => {
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
       expect(jwtSignStub).to.have.been.calledTwice;
+    });
+  });
+
+  context('logoutUser()', () => {
+    let userFindByIdStub: sinon.SinonStub;
+    let refreshTokenDeleteStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userFindByIdStub = sandbox.stub(User, 'findById');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+    });
+
+    it('should delete refresh tokens of auth user', async () => {
+      userFindByIdStub.resolves({
+        _id: 'someobjectid',
+        email: userCredentials.email,
+        salt: 'SOME SALT STRING',
+      });
+      refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
+
+      const logoutUserResponse = authService.logoutUser(jwtToken);
+
+      await expect(logoutUserResponse).to.eventually.be.fulfilled.with.property('message');
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
+    });
+
+    it('should catch error during logout', async () => {
+      userFindByIdStub.rejects(new Error('SOME ERROR'));
+
+      const logoutUserResponse = authService.logoutUser(jwtToken);
+
+      await expect(logoutUserResponse).to.eventually.be.rejectedWith(Error);
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.not.been.called;
     });
   });
 });
