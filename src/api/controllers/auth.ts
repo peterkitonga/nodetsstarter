@@ -161,6 +161,20 @@ class AuthController {
       next(err);
     }
   }
+
+  @Autobind
+  public async logoutUser(req: Request, res: Response<ResultResponse<null>>, next: NextFunction): Promise<void> {
+    try {
+      const logoutUser = await this.authService.logoutUser(req.auth!);
+
+      res.clearCookie('refresh_token', { httpOnly: true });
+      res.status(HttpStatusCodes.OK).json(logoutUser);
+    } catch (err) {
+      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+
+      next(err);
+    }
+  }
 }
 
 export default new AuthController();
