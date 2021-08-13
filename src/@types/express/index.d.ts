@@ -1,9 +1,9 @@
-import { Express, Request } from 'express';
+import { Express } from 'express';
 
 declare global {
   namespace Express {
     interface Request {
-      auth: string;
+      auth?: string;
     }
   }
 }
