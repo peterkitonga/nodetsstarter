@@ -9,6 +9,7 @@ import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '../../../../src/configs';
 import User from '../../../../src/models/user';
+import Salt from '../../../../src/models/salt';
 import Mailer from '../../../../src/loaders/nodemailer';
 import ExpressApp from '../../../../src/loaders/express';
 import MailerService from '../../../../src/services/mailer';
@@ -49,11 +50,13 @@ describe('src/api/controllers/auth', () => {
 
   context('POST /{API PREFIX}/auth/register', () => {
     let userSaveStub: sinon.SinonStub;
+    let saltSaveStub: sinon.SinonStub;
     let userExistsStub: sinon.SinonStub;
 
     beforeEach(() => {
       userExistsStub = sandbox.stub(User, 'exists');
       userSaveStub = sandbox.stub(User.prototype, 'save');
+      saltSaveStub = sandbox.stub(Salt.prototype, 'save');
     });
 
     it('should return validation error message if name field is missing', async () => {
@@ -126,6 +129,11 @@ describe('src/api/controllers/auth', () => {
         password: 'hashedpassword',
         salt: 'somesupersecretsalt',
       });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
       const regex = new RegExp(`Please check your email '${userEmail}' for the activation link`);
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
       const welcomeEmailStub = sandbox
@@ -143,17 +151,22 @@ describe('src/api/controllers/auth', () => {
       expect(res.body.message).to.match(regex);
       expect(bcryptHashStub).to.have.been.calledOnce;
       expect(userSaveStub).to.have.been.calledOnce;
-      expect(welcomeEmailStub).to.have.been.calledOnceWith('somesupersecretsalt');
+      expect(saltSaveStub).to.have.been.calledOnce;
+      expect(welcomeEmailStub).to.have.been.calledOnceWith('somesaltstring');
     });
   });
 
   context('POST /{API PREFIX}/auth/login', () => {
+    let saltSaveStub: sinon.SinonStub;
     let userFindOneStub: sinon.SinonStub;
     let bcryptCompareStub: sinon.SinonStub;
+    let refreshTokenSaveStub: sinon.SinonStub;
 
     beforeEach(() => {
       userFindOneStub = sandbox.stub(User, 'findOne');
+      saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       bcryptCompareStub = sandbox.stub(bcrypt, 'compare');
+      refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
     });
 
     it('should return validation error message if email field is missing', async () => {
@@ -229,10 +242,16 @@ describe('src/api/controllers/auth', () => {
     it('should return error if refresh token is not generated', async () => {
       bcryptCompareStub.resolves(true);
       userFindOneStub.resolves({
+        _id: 'someobjectid',
         password: 'hashedpassword',
         is_activated: true,
       });
-      sandbox.stub(RefreshToken.prototype, 'save').rejects(new Error('SOME ERROR'));
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
+      refreshTokenSaveStub.rejects(new Error('SOME ERROR'));
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
@@ -241,14 +260,14 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.be.a('string');
       expect(winstonLoggerErrorStub).to.have.been.called;
+      expect(refreshTokenSaveStub).to.have.been.called;
+      expect(saltSaveStub).to.have.been.called;
     });
 
     it('should return token on successful authentication', async () => {
       bcryptCompareStub.resolves(true);
       userFindOneStub.resolves({
-        _id: {
-          $oid: 'someobjectid',
-        },
+        _id: 'someobjectid',
         name: userName,
         email: userEmail,
         password: 'hashedpassword',
@@ -256,7 +275,12 @@ describe('src/api/controllers/auth', () => {
         is_activated: true,
         created_at: 'SOME DATE',
       });
-      sandbox.stub(RefreshToken.prototype, 'save').resolves({ _id: 'someobjectid' });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
+      refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
@@ -265,21 +289,25 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.headers['set-cookie']).to.exist.and.have.lengthOf(1);
       expect(res.body.data).to.have.deep.property('token');
+      expect(refreshTokenSaveStub).to.have.been.calledOnce;
+      expect(saltSaveStub).to.have.been.calledOnce;
     });
   });
 
   context('GET /{API PREFIX}/auth/activate/:code', () => {
-    let userExistsStub: sinon.SinonStub;
-    let userFindOneStub: sinon.SinonStub;
+    let saltDeleteStub: sinon.SinonStub;
+    let saltFindOneStub: sinon.SinonStub;
+    let userFindByIdStub: sinon.SinonStub;
     const activationCode = 'eeHieSoo6Ziequ0opidieVau';
 
     beforeEach(() => {
-      userExistsStub = sandbox.stub(User, 'exists');
-      userFindOneStub = sandbox.stub(User, 'findOne');
+      saltFindOneStub = sandbox.stub(Salt, 'findOne');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteOne');
+      userFindByIdStub = sandbox.stub(User, 'findById');
     });
 
-    it('should return error message if a user with given code is not found', async () => {
-      userExistsStub.resolves(false);
+    it('should return error message if given code is not found', async () => {
+      saltFindOneStub.resolves();
       const regex = new RegExp(`'${activationCode}' does not exist.`);
 
       const res = await request(ExpressApp['app']).get(`/api/v2/auth/activate/${activationCode}`);
@@ -287,11 +315,17 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
       expect(res.body.message).to.exist.and.match(regex);
       expect(winstonLoggerErrorStub).to.have.been.called;
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(userFindByIdStub).to.have.not.been.called;
     });
 
     it('should return error message if user is already activated', async () => {
-      userExistsStub.resolves(true);
-      userFindOneStub.resolves({
+      saltFindOneStub.resolves({
+        _id: 'someobjectid',
+        salt: activationCode,
+        user: 'someobjectid',
+      });
+      userFindByIdStub.resolves({
         is_activated: true,
       });
       const regex = new RegExp(`'${activationCode}' is already activated.`);
@@ -300,30 +334,44 @@ describe('src/api/controllers/auth', () => {
 
       expect(res.status).to.equal(HttpStatusCodes.FORBIDDEN);
       expect(res.body.message).to.exist.and.match(regex);
-      expect(winstonLoggerErrorStub).to.have.been.called;
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(userFindByIdStub).to.have.been.calledOnce;
     });
 
     it('should catch general errors during activation', async () => {
-      userExistsStub.resolves(true);
-      userFindOneStub.rejects(new Error('SOME GENERAL ERROR'));
+      saltFindOneStub.resolves({
+        _id: 'someobjectid',
+        salt: activationCode,
+        user: 'someobjectid',
+      });
+      userFindByIdStub.rejects(new Error('SOME GENERAL ERROR'));
 
       const res = await request(ExpressApp['app']).get(`/api/v2/auth/activate/${activationCode}`);
 
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.be.a('string');
       expect(winstonLoggerErrorStub).to.have.been.called;
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(userFindByIdStub).to.have.been.calledOnce;
     });
 
     it('should return success message on successful activation', async () => {
-      userExistsStub.resolves(true);
+      saltFindOneStub.resolves({
+        _id: 'someobjectid',
+        salt: activationCode,
+        user: 'someobjectid',
+      });
       const userSaveStub = sandbox.stub().resolves({
         name: userName,
         email: userEmail,
         is_activated: true,
       });
-      userFindOneStub.resolves({
+      userFindByIdStub.resolves({
         is_activated: false,
         save: userSaveStub,
+      });
+      saltDeleteStub.resolves({
+        _id: 'someobjectid',
       });
       const regex = new RegExp(`'${userEmail}' successfully activated.`);
 
@@ -331,6 +379,10 @@ describe('src/api/controllers/auth', () => {
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.exist.and.match(regex);
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(userSaveStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.been.calledOnce;
     });
   });
 
@@ -391,12 +443,18 @@ describe('src/api/controllers/auth', () => {
   });
 
   context('POST /{API PREFIX}/auth/reset/password', () => {
+    let saltDeleteStub: sinon.SinonStub;
     let userFindOneStub: sinon.SinonStub;
     let passwordResetFindStub: sinon.SinonStub;
+    let refreshTokenDeleteStub: sinon.SinonStub;
+    let passwordResetDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
       userFindOneStub = sandbox.stub(User, 'findOne');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteMany');
       passwordResetFindStub = sandbox.stub(PasswordReset, 'findOne');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      passwordResetDeleteStub = sandbox.stub(PasswordReset, 'deleteOne');
     });
 
     it('should return validation error message if token field is missing', async () => {
@@ -454,11 +512,10 @@ describe('src/api/controllers/auth', () => {
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
-    it('should update password and salt', async () => {
+    it('should update password, delete salts and refresh tokens', async () => {
       const regex = new RegExp(`'${userEmail}' has been reset successfully.`);
       passwordResetFindStub.resolves({ token: resetToken, email: userEmail });
       sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
-      sandbox.stub(PasswordReset, 'deleteOne').resolves();
       const userPasswordSaveStub = sandbox.stub().resolves({
         password: 'hashedpassword',
         salt: 'SOME SALT STRING',
@@ -468,6 +525,9 @@ describe('src/api/controllers/auth', () => {
         salt: 'SOME SALT STRING',
         save: userPasswordSaveStub,
       });
+      passwordResetDeleteStub.resolves();
+      refreshTokenDeleteStub.resolves();
+      saltDeleteStub.resolves();
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/reset/password')
@@ -475,11 +535,16 @@ describe('src/api/controllers/auth', () => {
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.exist.and.match(regex);
+      expect(passwordResetFindStub).to.have.been.calledOnce;
       expect(userPasswordSaveStub).to.have.been.calledOnce;
+      expect(passwordResetDeleteStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.been.calledOnce;
     });
   });
 
   context('GET /{API PREFIX}/auth/refresh/token', () => {
+    let saltSaveStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
@@ -488,8 +553,9 @@ describe('src/api/controllers/auth', () => {
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
       userFindByIdStub = sandbox.stub(User, 'findById');
-      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'findByIdAndDelete');
+      saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'findByIdAndDelete');
     });
 
     it('should return error if refresh token cookie is missing', async () => {
@@ -515,6 +581,11 @@ describe('src/api/controllers/auth', () => {
       jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userEmail,
@@ -534,6 +605,11 @@ describe('src/api/controllers/auth', () => {
       jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userEmail,
@@ -556,11 +632,13 @@ describe('src/api/controllers/auth', () => {
 
   context('GET /{API PREFIX}/auth/logout', () => {
     let jwtVerifyStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
       userFindByIdStub = sandbox.stub(User, 'findById');
       refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
     });
@@ -570,6 +648,8 @@ describe('src/api/controllers/auth', () => {
 
       expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
       expect(res.body.message).to.exist.and.match(/Bearer token is required/);
+      expect(jwtVerifyStub).to.have.not.been.called;
+      expect(saltExistsStub).to.have.not.been.called;
     });
 
     it('should return error if bearer token is not decoded', async () => {
@@ -582,6 +662,7 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
       expect(res.body.message).to.exist.and.match(/Authentication failed/);
       expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.not.been.called;
     });
 
     it('should return error if bearer token has expired', async () => {
@@ -594,6 +675,7 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
       expect(res.body.message).to.exist.and.match(/Bearer token is expired/);
       expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.not.been.called;
     });
 
     it('should catch errors if bearer token verification fails', async () => {
@@ -606,14 +688,32 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.equal('JWT ERROR');
       expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should return error if bearer token is no longer valid', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(false);
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Authentication failed/);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
     });
 
     it('should catch errors if deletion of refresh token fails', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
-        email: userEmail,
         salt: 'SOME SALT STRING',
       });
+      saltExistsStub.resolves(true);
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userEmail,
@@ -628,6 +728,7 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.be.a('string');
       expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
       expect(userFindByIdStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
     });
@@ -638,6 +739,7 @@ describe('src/api/controllers/auth', () => {
         email: userEmail,
         salt: 'SOME SALT STRING',
       });
+      saltExistsStub.resolves(true);
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userEmail,
@@ -652,6 +754,7 @@ describe('src/api/controllers/auth', () => {
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.exist.and.equal('Successfully logged out.');
       expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
       expect(userFindByIdStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
     });

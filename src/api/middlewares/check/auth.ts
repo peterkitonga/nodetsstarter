@@ -2,6 +2,7 @@ import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
 import configs from '../../../configs';
+import Salt from '../../../models/salt';
 import { HttpStatusCodes } from '../../../common/enums/http';
 import UnauthorizedError from '../../../common/errors/unauthorized';
 
@@ -21,11 +22,16 @@ class AuthCheck {
         const isDecodedToken = jwt.verify(token, configs.app.auth.jwt.secret);
 
         if (isDecodedToken) {
-          const decodedToken = <{ auth: string }>isDecodedToken;
+          const decodedToken = <{ auth: string; salt: string }>isDecodedToken;
+          const isValidToken = await Salt.exists({ salt: decodedToken.salt });
 
-          req.auth = decodedToken.auth;
+          if (isValidToken) {
+            req.auth = decodedToken.auth;
 
-          next();
+            next();
+          } else {
+            throw new UnauthorizedError(`Authentication failed. Please login.`);
+          }
         } else {
           throw new UnauthorizedError(`Authentication failed. Please login.`);
         }

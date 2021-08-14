@@ -6,7 +6,6 @@ const schema = new Schema<UserModel>(
     name: { type: String, required: true },
     email: { type: String, required: true },
     password: { type: String, required: true },
-    salt: String,
     avatar: String,
     is_activated: Boolean,
   },

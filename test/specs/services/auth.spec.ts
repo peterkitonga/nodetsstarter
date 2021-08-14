@@ -6,6 +6,7 @@ import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import User from '../../../src/models/user';
+import Salt from '../../../src/models/salt';
 import AuthService from '../../../src/services/auth';
 import RefreshToken from '../../../src/models/refresh-token';
 import PasswordReset from '../../../src/models/password-reset';
@@ -37,12 +38,14 @@ describe('src/services/auth: class AuthService', () => {
   });
 
   context('registerUser()', () => {
-    let userExistsStub: sinon.SinonStub;
     let userSaveStub: sinon.SinonStub;
+    let saltSaveStub: sinon.SinonStub;
+    let userExistsStub: sinon.SinonStub;
 
     beforeEach(() => {
       userExistsStub = sandbox.stub(User, 'exists');
       userSaveStub = sandbox.stub(User.prototype, 'save');
+      saltSaveStub = sandbox.stub(Salt.prototype, 'save');
     });
 
     it('should return error message if user exists', async () => {
@@ -62,18 +65,22 @@ describe('src/services/auth: class AuthService', () => {
       expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
       expect(bcryptHashStub).to.have.been.called;
       expect(userSaveStub).to.not.have.been.called;
+      expect(saltSaveStub).to.not.have.been.called;
     });
 
     it('should return user details after successful save', async () => {
       const bcryptHashStub = sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
       userExistsStub.resolves(false);
       userSaveStub.resolves({
-        _id: {
-          $oid: 'someobjectid',
-        },
+        _id: 'someobjectid',
         name: userDetails.name,
         email: userDetails.password,
         password: 'hashedpassword',
+      });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
       });
       const registrationResponse = authService.registerUser(userDetails);
 
@@ -81,16 +88,19 @@ describe('src/services/auth: class AuthService', () => {
       expect(userExistsStub).to.have.been.calledOnceWith({ email: userDetails.email });
       expect(bcryptHashStub).to.have.been.called;
       expect(userSaveStub).to.have.been.called;
+      expect(saltSaveStub).to.have.been.called;
     });
   });
 
   context('authenticateUser()', () => {
+    let saltSaveStub: sinon.SinonStub;
     let userFindOneStub: sinon.SinonStub;
     let bcryptCompareStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
 
     beforeEach(() => {
       userFindOneStub = sandbox.stub(User, 'findOne');
+      saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       bcryptCompareStub = sandbox.stub(bcrypt, 'compare');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
     });
@@ -136,6 +146,11 @@ describe('src/services/auth: class AuthService', () => {
         password: 'hashedpassword',
       });
       bcryptCompareStub.resolves(true);
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
       refreshTokenSaveStub.rejects(new Error('SOME ERROR'));
 
       const authenticationResponse = authService.authenticateUser(userCredentials);
@@ -143,6 +158,7 @@ describe('src/services/auth: class AuthService', () => {
       await expect(authenticationResponse).to.eventually.be.rejectedWith(Error);
       expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
       expect(bcryptCompareStub).to.have.been.calledOnceWith(userCredentials.password, 'hashedpassword');
+      expect(saltSaveStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
     });
 
@@ -157,6 +173,11 @@ describe('src/services/auth: class AuthService', () => {
         created_at: 'SOME DATE',
       });
       bcryptCompareStub.resolves(true);
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
 
       const authenticationResponse = authService.authenticateUser(userCredentials);
@@ -164,6 +185,7 @@ describe('src/services/auth: class AuthService', () => {
       await expect(authenticationResponse)
         .to.eventually.be.fulfilled.with.nested.property('data.token')
         .to.be.a('string');
+      expect(saltSaveStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
       expect(userFindOneStub).to.have.been.calledOnceWith({ email: userCredentials.email });
       expect(bcryptCompareStub).to.have.been.calledOnceWith(userCredentials.password, 'hashedpassword');
@@ -171,34 +193,41 @@ describe('src/services/auth: class AuthService', () => {
   });
 
   context('activateUser()', () => {
-    let userFindOneStub: sinon.SinonStub;
-    let userExistsStub: sinon.SinonStub;
+    let saltDeleteStub: sinon.SinonStub;
+    let saltFindOneStub: sinon.SinonStub;
+    let userFindByIdStub: sinon.SinonStub;
     const activationCode = 'eeHieSoo6Ziequ0opidieVau';
 
     beforeEach(() => {
-      userFindOneStub = sandbox.stub(User, 'findOne');
-      userExistsStub = sandbox.stub(User, 'exists');
+      saltFindOneStub = sandbox.stub(Salt, 'findOne');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteOne');
+      userFindByIdStub = sandbox.stub(User, 'findById');
     });
 
-    it('should return error message if no user with given code is found', async () => {
-      userExistsStub.resolves(false);
+    it('should return error message if given code is not found', async () => {
+      saltFindOneStub.resolves();
 
       const activationResponse = authService.activateUser(activationCode);
 
       await expect(activationResponse).to.eventually.be.rejectedWith(NotFoundError);
-      expect(userExistsStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
     });
 
-    it('should return error message if user is found but activated', async () => {
-      userExistsStub.resolves(true);
-      userFindOneStub.resolves({
+    it('should return error message if user is already activated', async () => {
+      saltFindOneStub.resolves({
+        _id: 'someobjectid',
+        salt: activationCode,
+        user: 'someobjectid',
+      });
+      userFindByIdStub.resolves({
         is_activated: true,
       });
 
       const activationResponse = authService.activateUser(activationCode);
 
       await expect(activationResponse).to.eventually.be.rejectedWith(ForbiddenError);
-      expect(userExistsStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(userFindByIdStub).to.have.been.calledOnce;
     });
 
     it('should return user email and status on successful activation', async () => {
@@ -207,8 +236,15 @@ describe('src/services/auth: class AuthService', () => {
         email: userDetails.email,
         is_activated: true,
       });
-      userExistsStub.resolves(true);
-      userFindOneStub.resolves({
+      saltFindOneStub.resolves({
+        _id: 'someobjectid',
+        salt: activationCode,
+        user: 'someobjectid',
+      });
+      saltDeleteStub.resolves({
+        _id: 'someobjectid',
+      });
+      userFindByIdStub.resolves({
         is_activated: false,
         save: userSaveStub,
       });
@@ -216,6 +252,8 @@ describe('src/services/auth: class AuthService', () => {
       const activationResponse = await authService.activateUser(activationCode);
 
       expect(userSaveStub).to.have.been.calledOnce;
+      expect(saltFindOneStub).to.have.been.calledOnceWith({ salt: activationCode });
+      expect(saltDeleteStub).to.have.been.calledOnceWith({ salt: activationCode });
       expect(activationResponse).to.have.nested.property('data.is_activated').to.equal(true);
       expect(activationResponse).to.have.nested.property('data.email').to.equal(userDetails.email);
     });
@@ -255,13 +293,19 @@ describe('src/services/auth: class AuthService', () => {
   });
 
   context('resetPassword()', () => {
+    let saltDeleteStub: sinon.SinonStub;
     let userFindOneStub: sinon.SinonStub;
     let passwordResetFindStub: sinon.SinonStub;
+    let refreshTokenDeleteStub: sinon.SinonStub;
+    let passwordResetDeleteStub: sinon.SinonStub;
     const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
 
     beforeEach(() => {
       userFindOneStub = sandbox.stub(User, 'findOne');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteMany');
       passwordResetFindStub = sandbox.stub(PasswordReset, 'findOne');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      passwordResetDeleteStub = sandbox.stub(PasswordReset, 'deleteOne');
     });
 
     it('should return error message if reset token is not found', async () => {
@@ -275,6 +319,7 @@ describe('src/services/auth: class AuthService', () => {
 
       await expect(passwordResetResponse).to.eventually.be.rejectedWith(NotFoundError);
       expect(passwordResetFindStub).to.have.been.calledOnce;
+      expect(passwordResetDeleteStub).to.have.not.been.called;
     });
 
     it('should not store the new password if hashing is unsucccessful', async () => {
@@ -289,21 +334,22 @@ describe('src/services/auth: class AuthService', () => {
 
       await expect(passwordResetResponse).to.eventually.be.rejectedWith(Error);
       expect(bcryptHashStub).to.have.been.calledOnce;
+      expect(passwordResetDeleteStub).to.have.not.been.called;
     });
 
     it('should hash, store the new password and delete reset token', async () => {
       passwordResetFindStub.resolves({ token: resetToken, email: userDetails.email });
       sandbox.stub(bcrypt, 'hash').resolves('hashedpassword');
-      const passwordResetDeleteStub = sandbox.stub(PasswordReset, 'deleteOne').resolves();
       const userPasswordSaveStub = sandbox.stub().resolves({
         password: 'hashedpassword',
-        salt: 'SOME SALT STRING',
       });
       userFindOneStub.resolves({
         password: 'hashedpassword',
-        salt: 'SOME SALT STRING',
         save: userPasswordSaveStub,
       });
+      passwordResetDeleteStub.resolves();
+      refreshTokenDeleteStub.resolves();
+      saltDeleteStub.resolves();
 
       const passwordResetResponse = authService.resetPassword({
         token: resetToken,
@@ -317,11 +363,14 @@ describe('src/services/auth: class AuthService', () => {
       expect(passwordResetFindStub).to.have.been.calledOnce;
       expect(userPasswordSaveStub).to.have.been.calledOnce;
       expect(passwordResetDeleteStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.been.calledOnce;
     });
   });
 
   context('refreshToken()', () => {
     let jwtSignStub: sinon.SinonStub;
+    let saltSaveStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
@@ -331,8 +380,9 @@ describe('src/services/auth: class AuthService', () => {
       jwtSignStub = sandbox.stub(jwt, 'sign');
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
       userFindByIdStub = sandbox.stub(User, 'findById');
-      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'findByIdAndDelete');
+      saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'findByIdAndDelete');
     });
 
     it('should return error if token verification fails', async () => {
@@ -350,7 +400,11 @@ describe('src/services/auth: class AuthService', () => {
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userCredentials.email,
-        salt: 'SOME SALT STRING',
+      });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
       });
 
       const refreshTokenResponse = authService.refreshToken(jwtToken);
@@ -360,6 +414,7 @@ describe('src/services/auth: class AuthService', () => {
       expect(userFindByIdStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
+      expect(saltSaveStub).to.have.been.calledOnce;
       expect(jwtSignStub).to.have.been.calledTwice;
     });
   });
@@ -377,7 +432,6 @@ describe('src/services/auth: class AuthService', () => {
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userCredentials.email,
-        salt: 'SOME SALT STRING',
       });
       refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
 
