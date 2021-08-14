@@ -49,12 +49,19 @@ class AuthController {
     next: NextFunction,
   ): Promise<void> {
     try {
+      let maxAge: number;
       const request = req.body;
       const authentication = await this.authService.authenticateUser(request);
       const { token, refresh_token, lifetime, auth } = authentication.data!;
 
+      if (request.remember_me) {
+        maxAge = 3600 * 720 * 1000; // 30 days
+      } else {
+        maxAge = 3600 * 24 * 1000; // 24 hours
+      }
+
       res.cookie('refresh_token', refresh_token, {
-        maxAge: Number(lifetime) * 2 * 1000,
+        maxAge,
         httpOnly: true,
       });
       res.status(HttpStatusCodes.OK).json({ status: 'success', data: { token, lifetime, auth } });
