@@ -27,6 +27,7 @@ class AuthCheck {
 
           if (isValidToken) {
             req.auth = decodedToken.auth;
+            req.salt = decodedToken.salt;
 
             next();
           } else {
