@@ -78,6 +78,10 @@ class AuthValidator {
           'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
           'any.required': `The {#label} field is required`,
         }),
+        remember_me: joi.boolean().required().label('remember_me').messages({
+          'boolean.base': `The {#label} field should be true/false`,
+          'any.required': `The {#label} field is required`,
+        }),
       });
 
       await authenticationSchema.validateAsync(request);

@@ -43,7 +43,7 @@ export default class AuthService {
     }
   }
 
-  public async authenticateUser({ email, password }: AuthRequest): Promise<ResultResponse<TokenResponse>> {
+  public async authenticateUser({ email, password, remember_me }: AuthRequest): Promise<ResultResponse<TokenResponse>> {
     try {
       const user = await User.findOne({ email });
 
@@ -53,7 +53,13 @@ export default class AuthService {
 
           if (isMatched) {
             const { name, avatar, is_activated, created_at } = user;
-            const generatedTokens = await this.generateTokens(user!._id.toString());
+            let generatedTokens: ResultResponse<Partial<TokenResponse>>;
+
+            if (remember_me) {
+              generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 720 });
+            } else {
+              generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 24 });
+            }
 
             return {
               status: 'success',
@@ -168,12 +174,15 @@ export default class AuthService {
       const isDecodedToken = jwt.verify(encryptedToken, configs.app.auth.jwt.secret);
 
       if (isDecodedToken) {
-        const decodedToken = <{ token: string }>isDecodedToken;
+        const decodedToken = <{ token: string; duration: number }>isDecodedToken;
 
         const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
         const authUser = await User.findById(existingToken!.user);
 
-        const generatedTokens = await this.generateTokens(authUser!._id.toString());
+        const generatedTokens = await this.generateTokens({
+          user_id: authUser!._id.toString(),
+          duration: decodedToken.duration,
+        });
 
         return {
           status: 'success',
@@ -205,12 +214,18 @@ export default class AuthService {
     }
   }
 
-  private async createRefreshToken(userId: string): Promise<ResultResponse<RefreshTokenModel>> {
+  private async createRefreshToken({
+    user_id,
+    duration,
+  }: {
+    user_id: string;
+    duration: number;
+  }): Promise<ResultResponse<RefreshTokenModel>> {
     try {
-      const additionalTime = Number(configs.app.auth.jwt.lifetime) * 2 * 1000;
+      const additionalTime = 3600 * duration * 1000;
 
       const refreshToken = new RefreshToken({
-        user: userId,
+        user: user_id,
         expires_at: Date.now() + additionalTime,
       });
       const result = await refreshToken.save();
@@ -221,26 +236,33 @@ export default class AuthService {
     }
   }
 
-  private async generateTokens(userId: string): Promise<ResultResponse<Partial<TokenResponse>>> {
+  private async generateTokens({
+    user_id,
+    duration,
+  }: {
+    user_id: string;
+    duration: number;
+  }): Promise<ResultResponse<Partial<TokenResponse>>> {
     try {
       const buffer = crypto.randomBytes(64);
       const salt = buffer.toString('hex');
 
-      const newSalt = new Salt({ salt, user: userId });
+      const newSalt = new Salt({ salt, user: user_id });
       await newSalt.save();
 
-      const newToken = await this.createRefreshToken(userId);
+      const newToken = await this.createRefreshToken({ user_id, duration });
       const refreshToken = jwt.sign(
         {
           token: newToken.data!._id.toString(),
+          duration,
         },
         configs.app.auth.jwt.secret,
-        { expiresIn: Number(configs.app.auth.jwt.lifetime) * 2 },
+        { expiresIn: 3600 * duration },
       );
 
       const token = jwt.sign(
         {
-          auth: userId,
+          auth: user_id,
           salt,
         },
         configs.app.auth.jwt.secret,
