@@ -632,15 +632,17 @@ describe('src/api/controllers/auth', () => {
 
   context('GET /{API PREFIX}/auth/logout', () => {
     let jwtVerifyStub: sinon.SinonStub;
+    let jwtDecodeStub: sinon.SinonStub;
     let saltExistsStub: sinon.SinonStub;
-    let userFindByIdStub: sinon.SinonStub;
+    let saltDeleteStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      jwtDecodeStub = sandbox.stub(jwt, 'decode');
       saltExistsStub = sandbox.stub(Salt, 'exists');
-      userFindByIdStub = sandbox.stub(User, 'findById');
-      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteOne');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteOne');
     });
 
     it('should return error if bearer token is missing', async () => {
@@ -708,54 +710,77 @@ describe('src/api/controllers/auth', () => {
       expect(saltExistsStub).to.have.been.calledOnce;
     });
 
+    it('should return error if refresh token is missing', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.FORBIDDEN);
+      expect(res.body.message).to.exist.and.match(/Refresh token missing/);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
+    });
+
     it('should catch errors if deletion of refresh token fails', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
         salt: 'SOME SALT STRING',
       });
       saltExistsStub.resolves(true);
-      userFindByIdStub.resolves({
+      jwtDecodeStub.returns({
+        token: jwtToken,
+      });
+      saltDeleteStub.resolves({
         _id: 'someobjectid',
-        email: userEmail,
-        salt: 'SOME SALT STRING',
       });
       refreshTokenDeleteStub.rejects(new Error('SOME ERROR'));
 
       const res = await request(ExpressApp['app'])
         .get('/api/v2/auth/logout')
-        .set('Authorization', `Bearer ${jwtToken}`);
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
 
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.be.a('string');
       expect(jwtVerifyStub).to.have.been.calledOnce;
       expect(saltExistsStub).to.have.been.calledOnce;
-      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(jwtDecodeStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
     });
 
-    it('should clear all cookies and remove refresh tokens', async () => {
+    it('should clear all cookies, remove refresh token and salt', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
         email: userEmail,
         salt: 'SOME SALT STRING',
       });
       saltExistsStub.resolves(true);
-      userFindByIdStub.resolves({
+      jwtDecodeStub.returns({
+        token: jwtToken,
+      });
+      saltDeleteStub.resolves({
         _id: 'someobjectid',
-        email: userEmail,
-        salt: 'SOME SALT STRING',
       });
       refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
 
       const res = await request(ExpressApp['app'])
         .get('/api/v2/auth/logout')
-        .set('Authorization', `Bearer ${jwtToken}`);
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.exist.and.equal('Successfully logged out.');
       expect(jwtVerifyStub).to.have.been.calledOnce;
       expect(saltExistsStub).to.have.been.calledOnce;
-      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(jwtDecodeStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
     });
   });

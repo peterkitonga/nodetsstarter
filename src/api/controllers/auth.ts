@@ -4,8 +4,10 @@ import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
 import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
-import { AuthRequest, ActivationRequest, ResetPasswordRequest } from '../../common/interfaces/requests';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
+import { AuthRequest, ActivationRequest, ResetPasswordRequest } from '../../common/interfaces/requests';
+
+import ForbiddenError from '../../common/errors/forbidden';
 import UnauthorizedError from '../../common/errors/unauthorized';
 
 class AuthController {
@@ -165,12 +167,18 @@ class AuthController {
   @Autobind
   public async logoutUser(req: Request, res: Response<ResultResponse<null>>, next: NextFunction): Promise<void> {
     try {
-      const logoutUser = await this.authService.logoutUser(req.auth!);
+      if (req.cookies && req.cookies.refresh_token) {
+        const logoutUser = await this.authService.logoutUser({ salt: req.salt!, token: req.cookies.refresh_token });
 
-      res.clearCookie('refresh_token', { httpOnly: true });
-      res.status(HttpStatusCodes.OK).json(logoutUser);
+        res.clearCookie('refresh_token', { httpOnly: true });
+        res.status(HttpStatusCodes.OK).json(logoutUser);
+      } else {
+        throw new ForbiddenError(`Logout failed. Refresh token missing.`);
+      }
     } catch (err) {
-      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      if (!err.statusCode) {
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      }
 
       next(err);
     }

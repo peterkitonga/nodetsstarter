@@ -4,6 +4,7 @@ declare global {
   namespace Express {
     interface Request {
       auth?: string;
+      salt?: string;
     }
   }
 }
