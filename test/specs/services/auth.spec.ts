@@ -30,6 +30,7 @@ const userCredentials = {
   email: userDetails.email,
   password: userDetails.password,
 };
+const salt = 'eeHieSoo6Ziequ0opidieVau';
 const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
 describe('src/services/auth: class AuthService', () => {
@@ -420,36 +421,52 @@ describe('src/services/auth: class AuthService', () => {
   });
 
   context('logoutUser()', () => {
-    let userFindByIdStub: sinon.SinonStub;
+    let jwtDecodeStub: sinon.SinonStub;
+    let saltDeleteStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
-      userFindByIdStub = sandbox.stub(User, 'findById');
-      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteMany');
+      jwtDecodeStub = sandbox.stub(jwt, 'decode');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteOne');
+      refreshTokenDeleteStub = sandbox.stub(RefreshToken, 'deleteOne');
     });
 
-    it('should delete refresh tokens of auth user', async () => {
-      userFindByIdStub.resolves({
-        _id: 'someobjectid',
-        email: userCredentials.email,
-      });
-      refreshTokenDeleteStub.resolves({ _id: 'someobjectid' });
+    it('should not delete salt or refresh token if jwt decoding fails', async () => {
+      jwtDecodeStub.throws(new Error('SOME ERROR'));
 
-      const logoutUserResponse = authService.logoutUser(jwtToken);
-
-      await expect(logoutUserResponse).to.eventually.be.fulfilled.with.property('message');
-      expect(userFindByIdStub).to.have.been.calledOnce;
-      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
-    });
-
-    it('should catch error during logout', async () => {
-      userFindByIdStub.rejects(new Error('SOME ERROR'));
-
-      const logoutUserResponse = authService.logoutUser(jwtToken);
+      const logoutUserResponse = authService.logoutUser({ salt, token: jwtToken });
 
       await expect(logoutUserResponse).to.eventually.be.rejectedWith(Error);
-      expect(userFindByIdStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.not.been.called;
       expect(refreshTokenDeleteStub).to.have.not.been.called;
+    });
+
+    it('should catch errors during deletion of salt and refresh token', async () => {
+      saltDeleteStub.rejects(new Error('SOME ERROR'));
+
+      const logoutUserResponse = authService.logoutUser({ salt, token: jwtToken });
+
+      await expect(logoutUserResponse).to.eventually.be.rejectedWith(Error);
+      expect(saltDeleteStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.not.been.called;
+    });
+
+    it('should delete salt and refresh token of authenticated user', async () => {
+      jwtDecodeStub.returns({
+        token: jwtToken,
+      });
+      saltDeleteStub.resolves({
+        _id: 'someobjectid',
+      });
+      refreshTokenDeleteStub.resolves({
+        _id: 'someobjectid',
+      });
+
+      const logoutUserResponse = authService.logoutUser({ salt, token: jwtToken });
+
+      await expect(logoutUserResponse).to.eventually.be.fulfilled.with.property('message');
+      expect(saltDeleteStub).to.have.been.calledOnce;
+      expect(refreshTokenDeleteStub).to.have.been.calledOnce;
     });
   });
 });
