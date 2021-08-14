@@ -395,7 +395,7 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should generate new tokens and delete old refresh token', async () => {
-      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 24 });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       refreshTokenDeleteStub.resolves({ user: 'someobjectid' });
       userFindByIdStub.resolves({

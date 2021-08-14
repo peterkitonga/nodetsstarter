@@ -170,7 +170,9 @@ describe('src/api/controllers/auth', () => {
     });
 
     it('should return validation error message if email field is missing', async () => {
-      const res = await request(ExpressApp['app']).post('/api/v2/auth/login').send({ password: userPassword });
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/login')
+        .send({ password: userPassword, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
       expect(res.body.message).to.equal('The "email" field is required');
@@ -178,10 +180,22 @@ describe('src/api/controllers/auth', () => {
     });
 
     it('should return validation error message if password field is missing', async () => {
-      const res = await request(ExpressApp['app']).post('/api/v2/auth/login').send({ email: userEmail });
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/login')
+        .send({ email: userEmail, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
       expect(res.body.message).to.equal('The "password" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if remember me field is missing', async () => {
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/login')
+        .send({ email: userEmail, password: userPassword });
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "remember_me" field is required');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -190,7 +204,7 @@ describe('src/api/controllers/auth', () => {
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
-        .send({ email: userEmail, password: userPassword });
+        .send({ email: userEmail, password: userPassword, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
       expect(res.body.message).to.match(/does not exist./);
@@ -204,7 +218,7 @@ describe('src/api/controllers/auth', () => {
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
-        .send({ email: userEmail, password: userPassword });
+        .send({ email: userEmail, password: userPassword, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.FORBIDDEN);
       expect(res.body.message).to.match(/is not activated yet/);
@@ -220,7 +234,7 @@ describe('src/api/controllers/auth', () => {
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
-        .send({ email: userEmail, password: 'somewrongpassword' });
+        .send({ email: userEmail, password: 'somewrongpassword', remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
       expect(res.body.message).to.match(/Unauthorised/);
@@ -232,7 +246,7 @@ describe('src/api/controllers/auth', () => {
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
-        .send({ email: userEmail, password: userPassword });
+        .send({ email: userEmail, password: userPassword, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.be.a('string');
@@ -255,13 +269,42 @@ describe('src/api/controllers/auth', () => {
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
-        .send({ email: userEmail, password: userPassword });
+        .send({ email: userEmail, password: userPassword, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
       expect(res.body.message).to.exist.and.be.a('string');
       expect(winstonLoggerErrorStub).to.have.been.called;
       expect(refreshTokenSaveStub).to.have.been.called;
       expect(saltSaveStub).to.have.been.called;
+    });
+
+    it('should generate refresh token with 30 day lifetime if remember me is enabled', async () => {
+      bcryptCompareStub.resolves(true);
+      userFindOneStub.resolves({
+        _id: 'someobjectid',
+        name: userName,
+        email: userEmail,
+        password: 'hashedpassword',
+        avatar: null,
+        is_activated: true,
+        created_at: 'SOME DATE',
+      });
+      saltSaveStub.resolves({
+        _id: 'someobjectid',
+        salt: 'somesaltstring',
+        user: 'someobjectid',
+      });
+      refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+
+      const res = await request(ExpressApp['app'])
+        .post('/api/v2/auth/login')
+        .send({ email: userEmail, password: userPassword, remember_me: true });
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.headers['set-cookie']).to.exist.and.have.lengthOf(1);
+      expect(res.body.data).to.have.deep.property('token');
+      expect(refreshTokenSaveStub).to.have.been.calledOnce;
+      expect(saltSaveStub).to.have.been.calledOnce;
     });
 
     it('should return token on successful authentication', async () => {
@@ -284,7 +327,7 @@ describe('src/api/controllers/auth', () => {
 
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/login')
-        .send({ email: userEmail, password: userPassword });
+        .send({ email: userEmail, password: userPassword, remember_me: false });
 
       expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.headers['set-cookie']).to.exist.and.have.lengthOf(1);
@@ -602,7 +645,7 @@ describe('src/api/controllers/auth', () => {
     });
 
     it('should return new token and add refresh token cookie', async () => {
-      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 720 });
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       saltSaveStub.resolves({
