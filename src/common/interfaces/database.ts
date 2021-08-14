@@ -5,9 +5,15 @@ export interface UserModel extends Document {
   name: string;
   email: string;
   password: string;
-  salt: string;
   avatar?: string;
   is_activated?: boolean;
+  created_at?: string;
+}
+
+export interface SaltModel extends Document {
+  _id: string;
+  salt: string;
+  user: UserModel;
   created_at?: string;
 }
 
