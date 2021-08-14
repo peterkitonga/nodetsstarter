@@ -191,10 +191,13 @@ export default class AuthService {
     }
   }
 
-  public async logoutUser(userId: string): Promise<ResultResponse<null>> {
+  public async logoutUser({ salt, token }: Record<'salt' | 'token', string>): Promise<ResultResponse<null>> {
     try {
-      const authUser = await User.findById(userId);
-      await RefreshToken.deleteMany({ user: authUser! });
+      const decode = jwt.decode(token);
+      const decodedToken = <{ token: string }>decode;
+
+      await Salt.deleteOne({ salt });
+      await RefreshToken.deleteOne({ _id: decodedToken.token });
 
       return { status: 'success', message: 'Successfully logged out.' };
     } catch (err) {
