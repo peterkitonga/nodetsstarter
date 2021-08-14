@@ -53,7 +53,6 @@ export default class AuthService {
             const { name, avatar, is_activated, created_at } = user;
             const generatedTokens = await this.generateTokens({
               user_id: user!._id.toString(),
-              email: user!.email,
               salt: user!.salt,
             });
 
@@ -180,7 +179,6 @@ export default class AuthService {
 
         const generatedTokens = await this.generateTokens({
           user_id: authUser!._id.toString(),
-          email: authUser!.email,
           salt: authUser!.salt,
         });
 
@@ -229,9 +227,8 @@ export default class AuthService {
 
   private async generateTokens({
     user_id,
-    email,
     salt,
-  }: Record<'user_id' | 'email' | 'salt', string>): Promise<ResultResponse<Partial<TokenResponse>>> {
+  }: Record<'user_id' | 'salt', string>): Promise<ResultResponse<Partial<TokenResponse>>> {
     try {
       const newToken = await this.createRefreshToken(user_id);
       const refreshToken = jwt.sign(
@@ -245,7 +242,6 @@ export default class AuthService {
       const token = jwt.sign(
         {
           auth: user_id,
-          email,
           salt,
         },
         configs.app.auth.jwt.secret,
