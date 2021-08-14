@@ -27,6 +27,7 @@ const sandbox = sinon.createSandbox();
 const userName = 'John Doe';
 const userEmail = 'disdegnosi@dunsoi.com'; // generated from https://emailfake.com/
 const userPassword = 'supersecretpassword';
+const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
 const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
 const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
@@ -589,12 +590,14 @@ describe('src/api/controllers/auth', () => {
   context('GET /{API PREFIX}/auth/refresh/token', () => {
     let saltSaveStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
 
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
       userFindByIdStub = sandbox.stub(User, 'findById');
       saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
@@ -608,7 +611,7 @@ describe('src/api/controllers/auth', () => {
       expect(res.body.message).to.exist.and.to.equal('Authentication failed. Please login.');
     });
 
-    it('should return error if refresh token is invalid', async () => {
+    it('should return error if refresh token is not decoded', async () => {
       jwtVerifyStub.returns(undefined);
 
       const res = await request(ExpressApp['app'])
@@ -620,8 +623,34 @@ describe('src/api/controllers/auth', () => {
       expect(jwtVerifyStub).to.have.been.calledOnceWith(jwtToken);
     });
 
+    it('should return error if refresh token is expired', async () => {
+      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/refresh/token')
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.to.equal('Unauthorized. Refresh token is expired.');
+      expect(jwtVerifyStub).to.have.been.calledOnceWith(jwtToken);
+    });
+
+    it('should return error if refresh token is no longer valid', async () => {
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 24, salt });
+      saltExistsStub.resolves(false);
+
+      const res = await request(ExpressApp['app'])
+        .get('/api/v2/auth/refresh/token')
+        .set('Cookie', [`refresh_token=${jwtToken}`]);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.to.equal('Authentication failed. Please login.');
+      expect(jwtVerifyStub).to.have.been.calledOnceWith(jwtToken);
+    });
+
     it('should return error if generation of token is unsuccessful', async () => {
-      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2' });
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 24, salt });
+      saltExistsStub.resolves(true);
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       saltSaveStub.resolves({
@@ -645,7 +674,8 @@ describe('src/api/controllers/auth', () => {
     });
 
     it('should return new token and add refresh token cookie', async () => {
-      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 720 });
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 720, salt });
+      saltExistsStub.resolves(true);
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       saltSaveStub.resolves({

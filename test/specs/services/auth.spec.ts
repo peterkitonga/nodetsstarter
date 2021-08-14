@@ -1,7 +1,7 @@
 import chai from 'chai';
 import sinon from 'sinon';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -30,7 +30,7 @@ const userCredentials = {
   email: userDetails.email,
   password: userDetails.password,
 };
-const salt = 'eeHieSoo6Ziequ0opidieVau';
+const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
 const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
 describe('src/services/auth: class AuthService', () => {
@@ -373,6 +373,7 @@ describe('src/services/auth: class AuthService', () => {
     let jwtSignStub: sinon.SinonStub;
     let saltSaveStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
@@ -380,6 +381,7 @@ describe('src/services/auth: class AuthService', () => {
     beforeEach(() => {
       jwtSignStub = sandbox.stub(jwt, 'sign');
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
       userFindByIdStub = sandbox.stub(User, 'findById');
       saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
@@ -392,10 +394,31 @@ describe('src/services/auth: class AuthService', () => {
       const refreshTokenResponse = authService.refreshToken(jwtToken);
 
       await expect(refreshTokenResponse).to.eventually.be.rejectedWith(UnauthorizedError);
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should return error if token is expired', async () => {
+      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
+
+      const refreshTokenResponse = authService.refreshToken(jwtToken);
+
+      await expect(refreshTokenResponse).to.eventually.be.rejectedWith(UnauthorizedError);
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should return error if token is no longer valid', async () => {
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 24, salt });
+      saltExistsStub.resolves(false);
+
+      const refreshTokenResponse = authService.refreshToken(jwtToken);
+
+      await expect(refreshTokenResponse).to.eventually.be.rejectedWith(UnauthorizedError);
+      expect(saltExistsStub).to.have.been.calledOnce;
     });
 
     it('should generate new tokens and delete old refresh token', async () => {
-      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 24 });
+      jwtVerifyStub.returns({ token: 'thie7hie6gaev5Oothaethe2', duration: 24, salt });
+      saltExistsStub.resolves(true);
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       refreshTokenDeleteStub.resolves({ user: 'someobjectid' });
       userFindByIdStub.resolves({
@@ -412,6 +435,8 @@ describe('src/services/auth: class AuthService', () => {
 
       await expect(refreshTokenResponse).to.eventually.be.fulfilled.with.nested.property('data.token');
       await expect(refreshTokenResponse).to.eventually.be.fulfilled.with.nested.property('data.refresh_token');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
       expect(userFindByIdStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '../configs';
 import User from '../models/user';
@@ -174,29 +174,38 @@ export default class AuthService {
       const isDecodedToken = jwt.verify(encryptedToken, configs.app.auth.jwt.secret);
 
       if (isDecodedToken) {
-        const decodedToken = <{ token: string; duration: number }>isDecodedToken;
+        const decodedToken = <{ token: string; duration: number; salt: string }>isDecodedToken;
+        const isValidToken = await Salt.exists({ salt: decodedToken.salt });
 
-        const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
-        const authUser = await User.findById(existingToken!.user);
+        if (isValidToken) {
+          const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
+          const authUser = await User.findById(existingToken!.user);
 
-        const generatedTokens = await this.generateTokens({
-          user_id: authUser!._id.toString(),
-          duration: decodedToken.duration,
-        });
+          const generatedTokens = await this.generateTokens({
+            user_id: authUser!._id.toString(),
+            duration: decodedToken.duration,
+          });
 
-        return {
-          status: 'success',
-          data: {
-            token: generatedTokens.data!.token,
-            refresh_token: generatedTokens.data!.refresh_token,
-            lifetime: configs.app.auth.jwt.lifetime,
-          },
-        };
+          return {
+            status: 'success',
+            data: {
+              token: generatedTokens.data!.token,
+              refresh_token: generatedTokens.data!.refresh_token,
+              lifetime: configs.app.auth.jwt.lifetime,
+            },
+          };
+        } else {
+          throw new UnauthorizedError(`Authentication failed. Please login.`);
+        }
       } else {
         throw new UnauthorizedError(`Authentication failed. Please login.`);
       }
     } catch (err) {
-      throw err;
+      if (err instanceof TokenExpiredError) {
+        throw new UnauthorizedError('Unauthorized. Refresh token is expired.');
+      } else {
+        throw err;
+      }
     }
   }
 
@@ -255,6 +264,7 @@ export default class AuthService {
         {
           token: newToken.data!._id.toString(),
           duration,
+          salt,
         },
         configs.app.auth.jwt.secret,
         { expiresIn: 3600 * duration },
