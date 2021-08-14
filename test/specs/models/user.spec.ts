@@ -14,7 +14,6 @@ describe('src/models/user', () => {
       expect(validation!.errors.name).to.exist;
       expect(validation!.errors.email).to.exist;
       expect(validation!.errors.password).to.exist;
-      expect(validation!.errors.salt).to.not.exist;
       expect(validation!.errors.avatar).to.not.exist;
       expect(validation!.errors.is_activated).to.not.exist;
     });
