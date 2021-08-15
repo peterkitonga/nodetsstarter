@@ -4,6 +4,7 @@ import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
 import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
+import { UserModel } from '../../common/interfaces/database';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
 import { AuthRequest, ActivationRequest, ResetPasswordRequest } from '../../common/interfaces/requests';
 
@@ -166,6 +167,23 @@ class AuthController {
       if (!err.statusCode) {
         err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
       }
+
+      next(err);
+    }
+  }
+
+  @Autobind
+  public async getUser(
+    req: Request,
+    res: Response<ResultResponse<Partial<UserModel>>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const getUser = await this.authService.getUser(req.auth!);
+
+      res.status(HttpStatusCodes.OK).json(getUser);
+    } catch (err) {
+      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
 
       next(err);
     }
