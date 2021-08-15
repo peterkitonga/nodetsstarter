@@ -703,6 +703,80 @@ describe('src/api/controllers/auth', () => {
     });
   });
 
+  context('GET /{API PREFIX}/auth/user', () => {
+    let userFindStub: sinon.SinonStub;
+    let jwtVerifyStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
+      userFindStub = sandbox.stub(User, 'findById');
+    });
+
+    it('should return error if bearer token is missing', async () => {
+      const res = await request(ExpressApp['app']).get('/api/v2/auth/user');
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Bearer token is required/);
+      expect(jwtVerifyStub).to.have.not.been.called;
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should return error if bearer token has expired', async () => {
+      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
+
+      const res = await request(ExpressApp['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Bearer token is expired/);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should catch errors if fetching user data fails', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.rejects(new Error('SOME ERROR'));
+
+      const res = await request(ExpressApp['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
+      expect(userFindStub).to.have.been.calledOnce;
+    });
+
+    it('should return user with given id', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        email: userEmail,
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.resolves({
+        name: userName,
+        email: userEmail,
+        avatar: 'SOME URL',
+        is_activated: true,
+        created_at: new Date().toISOString(),
+      });
+
+      const res = await request(ExpressApp['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.body.data).to.exist.and.have.deep.property('email');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
+      expect(userFindStub).to.have.been.calledOnce;
+    });
+  });
+
   context('GET /{API PREFIX}/auth/logout', () => {
     let jwtVerifyStub: sinon.SinonStub;
     let jwtDecodeStub: sinon.SinonStub;
