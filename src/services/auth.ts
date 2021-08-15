@@ -209,6 +209,20 @@ export default class AuthService {
     }
   }
 
+  public async getUser(userId: string): Promise<ResultResponse<Partial<UserModel>>> {
+    try {
+      const user = await User.findById(userId);
+      const { name, email, avatar, is_activated, created_at } = user!;
+
+      return {
+        status: 'success',
+        data: { name, email, avatar, is_activated, created_at },
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
+
   public async logoutUser({ salt, token }: Record<'salt' | 'token', string>): Promise<ResultResponse<null>> {
     try {
       const decode = jwt.decode(token);

@@ -30,6 +30,7 @@ const userCredentials = {
   email: userDetails.email,
   password: userDetails.password,
 };
+const userId = '61178dc6ec18566f1ff5d890';
 const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
 const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
 
@@ -442,6 +443,40 @@ describe('src/services/auth: class AuthService', () => {
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
       expect(saltSaveStub).to.have.been.calledOnce;
       expect(jwtSignStub).to.have.been.calledTwice;
+    });
+  });
+
+  context('getUser()', () => {
+    let userFindStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userFindStub = sandbox.stub(User, 'findById');
+    });
+
+    it('should return error if fetching user fails', async () => {
+      userFindStub.rejects(new Error('SOME ERROR'));
+
+      const getUserResponse = authService.getUser(userId);
+
+      await expect(getUserResponse).to.eventually.be.rejectedWith(Error);
+      expect(userFindStub).to.have.been.calledOnceWith(userId);
+    });
+
+    it('should return user data with given id', async () => {
+      userFindStub.resolves({
+        name: userDetails.name,
+        email: userDetails.email,
+        avatar: 'SOME URL',
+        is_activated: true,
+        created_at: new Date().toISOString(),
+      });
+
+      const getUserResponse = authService.getUser(userId);
+
+      await expect(getUserResponse)
+        .to.eventually.be.fulfilled.with.nested.property('data.email')
+        .to.equal(userDetails.email);
+      expect(userFindStub).to.have.been.calledOnceWith(userId);
     });
   });
 
