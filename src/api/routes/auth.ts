@@ -15,5 +15,6 @@ export default (appRouter: Router): void => {
   authRouter.post('/send/reset/link', AuthValidator.sendResetLink, AuthController.sendResetLink);
   authRouter.post('/reset/password', AuthValidator.resetPassword, AuthController.resetPassword);
   authRouter.get('/refresh/token', AuthController.refreshToken);
+  authRouter.get('/user', AuthCheck.verifyToken, AuthController.getUser);
   authRouter.get('/logout', AuthCheck.verifyToken, AuthController.logoutUser);
 };
