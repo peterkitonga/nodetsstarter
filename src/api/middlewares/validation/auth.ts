@@ -159,6 +159,40 @@ class AuthValidator {
       next(new ValidationError(message, request));
     }
   }
+
+  public async updatePassword(
+    req: Request<unknown, unknown, AuthRequest>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    const request = req.body;
+
+    try {
+      const updatePasswordSchema = joi.object({
+        password: joi.string().min(6).trim(true).required().label('password').messages({
+          'string.base': `The {#label} field should be text`,
+          'string.empty': `The {#label} field cannot be empty`,
+          'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
+          'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
+          'any.required': `The {#label} field is required`,
+        }),
+        password_confirmation: joi
+          .any()
+          .equal(joi.ref('password'))
+          .required()
+          .label('password_confirmation')
+          .options({ messages: { 'any.only': `The {#label} field should match the password` } }),
+      });
+
+      await updatePasswordSchema.validateAsync(request);
+
+      next();
+    } catch (err) {
+      const { message } = err.details[0];
+
+      next(new ValidationError(message, request));
+    }
+  }
 }
 
 export default new AuthValidator();
