@@ -375,6 +375,7 @@ describe('src/services/auth: class AuthService', () => {
     let saltSaveStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;
     let saltExistsStub: sinon.SinonStub;
+    let saltDeleteStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
@@ -383,6 +384,7 @@ describe('src/services/auth: class AuthService', () => {
       jwtSignStub = sandbox.stub(jwt, 'sign');
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
       saltExistsStub = sandbox.stub(Salt, 'exists');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteOne');
       userFindByIdStub = sandbox.stub(User, 'findById');
       saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
@@ -422,6 +424,7 @@ describe('src/services/auth: class AuthService', () => {
       saltExistsStub.resolves(true);
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
       refreshTokenDeleteStub.resolves({ user: 'someobjectid' });
+      saltDeleteStub.resolves({ _id: 'someobjectid' });
       userFindByIdStub.resolves({
         _id: 'someobjectid',
         email: userCredentials.email,
@@ -441,6 +444,7 @@ describe('src/services/auth: class AuthService', () => {
       expect(userFindByIdStub).to.have.been.calledOnce;
       expect(refreshTokenDeleteStub).to.have.been.calledOnce;
       expect(refreshTokenSaveStub).to.have.been.calledOnce;
+      expect(saltDeleteStub).to.have.been.calledOnce;
       expect(saltSaveStub).to.have.been.calledOnce;
       expect(jwtSignStub).to.have.been.calledTwice;
     });

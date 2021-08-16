@@ -591,6 +591,7 @@ describe('src/api/controllers/auth', () => {
     let saltSaveStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;
     let saltExistsStub: sinon.SinonStub;
+    let saltDeleteStub: sinon.SinonStub;
     let userFindByIdStub: sinon.SinonStub;
     let refreshTokenSaveStub: sinon.SinonStub;
     let refreshTokenDeleteStub: sinon.SinonStub;
@@ -598,6 +599,7 @@ describe('src/api/controllers/auth', () => {
     beforeEach(() => {
       jwtVerifyStub = sandbox.stub(jwt, 'verify');
       saltExistsStub = sandbox.stub(Salt, 'exists');
+      saltDeleteStub = sandbox.stub(Salt, 'deleteOne');
       userFindByIdStub = sandbox.stub(User, 'findById');
       saltSaveStub = sandbox.stub(Salt.prototype, 'save');
       refreshTokenSaveStub = sandbox.stub(RefreshToken.prototype, 'save');
@@ -653,6 +655,7 @@ describe('src/api/controllers/auth', () => {
       saltExistsStub.resolves(true);
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      saltDeleteStub.resolves({ _id: 'someobjectid' });
       saltSaveStub.resolves({
         _id: 'someobjectid',
         salt: 'somesaltstring',
@@ -678,6 +681,7 @@ describe('src/api/controllers/auth', () => {
       saltExistsStub.resolves(true);
       refreshTokenDeleteStub.resolves({ user: 'someuserobjectid' });
       refreshTokenSaveStub.resolves({ _id: 'someobjectid' });
+      saltDeleteStub.resolves({ _id: 'someobjectid' });
       saltSaveStub.resolves({
         _id: 'someobjectid',
         salt: 'somesaltstring',
