@@ -224,6 +224,26 @@ export default class AuthService {
     }
   }
 
+  public async updatePassword({
+    user_id,
+    password,
+  }: Record<'user_id' | 'password', string>): Promise<ResultResponse<null>> {
+    try {
+      const hashedPassword = await bcrypt.hash(password!, 12);
+
+      const user = await User.findById(user_id);
+      user!.password = hashedPassword;
+      await user!.save();
+
+      return {
+        status: 'success',
+        message: 'Successfully updated password.',
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
+
   public async logoutUser({ salt, token }: Record<'salt' | 'token', string>): Promise<ResultResponse<null>> {
     try {
       const decode = jwt.decode(token);
