@@ -484,6 +484,44 @@ describe('src/services/auth: class AuthService', () => {
     });
   });
 
+  context('updatePassword()', () => {
+    let userFindStub: sinon.SinonStub;
+    let bcryptHashStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userFindStub = sandbox.stub(User, 'findById');
+      bcryptHashStub = sandbox.stub(bcrypt, 'hash');
+    });
+
+    it('should return error if hashing the new password fails', async () => {
+      bcryptHashStub.rejects(new Error('SOME ERROR'));
+
+      const updatePasswordResponse = authService.updatePassword({ user_id: userId, password: 'newpassword' });
+
+      await expect(updatePasswordResponse).to.eventually.be.rejectedWith(Error);
+      expect(bcryptHashStub).to.have.been.calledOnce;
+      expect(userFindStub).to.have.not.been.called;
+    });
+
+    it('should hash and save new hashed password', async () => {
+      bcryptHashStub.resolves('hashedpassword');
+      const userPasswordSaveStub = sandbox.stub().resolves({
+        password: 'hashedpassword',
+      });
+      userFindStub.resolves({
+        password: 'oldhashedpassword',
+        save: userPasswordSaveStub,
+      });
+
+      const updatePasswordResponse = authService.updatePassword({ user_id: userId, password: 'newpassword' });
+
+      await expect(updatePasswordResponse).to.eventually.be.fulfilled;
+      expect(bcryptHashStub).to.have.been.calledOnce;
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(userPasswordSaveStub).to.have.been.calledOnce;
+    });
+  });
+
   context('logoutUser()', () => {
     let jwtDecodeStub: sinon.SinonStub;
     let saltDeleteStub: sinon.SinonStub;
