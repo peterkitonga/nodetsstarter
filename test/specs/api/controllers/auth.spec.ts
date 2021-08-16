@@ -741,7 +741,6 @@ describe('src/api/controllers/auth', () => {
     it('should catch errors if fetching user data fails', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
-        email: userEmail,
         salt: 'SOME SALT STRING',
       });
       saltExistsStub.resolves(true);
@@ -759,7 +758,6 @@ describe('src/api/controllers/auth', () => {
     it('should return user with given id', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
-        email: userEmail,
         salt: 'SOME SALT STRING',
       });
       saltExistsStub.resolves(true);
@@ -778,6 +776,131 @@ describe('src/api/controllers/auth', () => {
       expect(jwtVerifyStub).to.have.been.calledOnce;
       expect(saltExistsStub).to.have.been.calledOnce;
       expect(userFindStub).to.have.been.calledOnce;
+    });
+  });
+
+  context('PUT /{API PREFIX}/auth/update/password', () => {
+    let userFindStub: sinon.SinonStub;
+    let jwtVerifyStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
+    let bcryptHashStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
+      userFindStub = sandbox.stub(User, 'findById');
+      bcryptHashStub = sandbox.stub(bcrypt, 'hash');
+    });
+
+    it('should return validation error message if password field is missing', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/password')
+        .send({ password_confirmation: userPassword })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "password" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if password confirmation field does not match the password', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/password')
+        .send({ password: userPassword, password_confirmation: 'otherpassword' })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "password_confirmation" field should match the password');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error if bearer token is missing', async () => {
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/password')
+        .send({ password: userPassword, password_confirmation: 'otherpassword' });
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Bearer token is required/);
+      expect(jwtVerifyStub).to.have.not.been.called;
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should return error if bearer token has expired', async () => {
+      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/password')
+        .send({ password: userPassword, password_confirmation: 'otherpassword' })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
+      expect(res.body.message).to.exist.and.match(/Bearer token is expired/);
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.not.been.called;
+    });
+
+    it('should return error message if updating password is unsuccessful', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      const userPasswordSaveStub = sandbox.stub().rejects(new Error('SOME ERROR'));
+      userFindStub.resolves({
+        password: 'oldhashedpassword',
+        save: userPasswordSaveStub,
+      });
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/password')
+        .send({ password: userPassword, password_confirmation: userPassword })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(userPasswordSaveStub).to.have.been.calledOnce;
+    });
+
+    it('should return successful message after updating password', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      const userPasswordSaveStub = sandbox.stub().resolves({
+        password: 'hashedpassword',
+      });
+      userFindStub.resolves({
+        password: 'oldhashedpassword',
+        save: userPasswordSaveStub,
+      });
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/password')
+        .send({ password: userPassword, password_confirmation: userPassword })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.CREATED);
+      expect(res.body.message).to.exist.and.have.equal('Successfully updated password.');
+      expect(jwtVerifyStub).to.have.been.calledOnce;
+      expect(saltExistsStub).to.have.been.calledOnce;
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(userPasswordSaveStub).to.have.been.calledOnce;
     });
   });
 
