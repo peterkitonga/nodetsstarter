@@ -190,6 +190,24 @@ class AuthController {
   }
 
   @Autobind
+  public async updatePassword(
+    req: Request<unknown, unknown, AuthRequest>,
+    res: Response<ResultResponse<null>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const request = req.body;
+      const updatePassword = await this.authService.updatePassword({ user_id: req.auth!, password: request.password });
+
+      res.status(HttpStatusCodes.CREATED).json(updatePassword);
+    } catch (err) {
+      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+
+      next(err);
+    }
+  }
+
+  @Autobind
   public async logoutUser(req: Request, res: Response<ResultResponse<null>>, next: NextFunction): Promise<void> {
     try {
       if (req.cookies && req.cookies.refresh_token) {
