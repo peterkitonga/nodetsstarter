@@ -16,3 +16,7 @@ export interface ResetPasswordRequest {
   password?: string;
   password_confirmation?: string;
 }
+
+export interface FileRequest {
+  file: string;
+}
