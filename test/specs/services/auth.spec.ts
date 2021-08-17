@@ -493,35 +493,35 @@ describe('src/services/auth: class AuthService', () => {
     });
 
     it('should return error message if updating avatar fails', async () => {
-      const userPasswordSaveStub = sandbox.stub().rejects(new Error('SOME ERROR'));
+      const updateAvatarSaveStub = sandbox.stub().rejects(new Error('SOME ERROR'));
       userFindStub.resolves({
         avatar: fileUrl,
-        save: userPasswordSaveStub,
+        save: updateAvatarSaveStub,
       });
 
-      const updatePasswordResponse = authService.updateAvatar({ user_id: userId, url: fileUrl });
+      const updateAvatarResponse = authService.updateAvatar({ user_id: userId, url: fileUrl });
 
-      await expect(updatePasswordResponse).to.eventually.be.rejectedWith(Error);
+      await expect(updateAvatarResponse).to.eventually.be.rejectedWith(Error);
       expect(userFindStub).to.have.been.calledOnce;
-      expect(userPasswordSaveStub).to.have.been.calledOnce;
+      expect(updateAvatarSaveStub).to.have.been.calledOnce;
     });
 
     it('should update avatar for the user with given id', async () => {
-      const userPasswordSaveStub = sandbox.stub().resolves({
+      const updateAvatarSaveStub = sandbox.stub().resolves({
         avatar: fileUrl,
       });
       userFindStub.resolves({
         avatar: fileUrl,
-        save: userPasswordSaveStub,
+        save: updateAvatarSaveStub,
       });
 
-      const updatePasswordResponse = authService.updateAvatar({ user_id: userId, url: fileUrl });
+      const updateAvatarResponse = authService.updateAvatar({ user_id: userId, url: fileUrl });
 
-      await expect(updatePasswordResponse)
+      await expect(updateAvatarResponse)
         .to.eventually.be.fulfilled.with.nested.property('data.avatar')
         .to.equal(fileUrl);
       expect(userFindStub).to.have.been.calledOnce;
-      expect(userPasswordSaveStub).to.have.been.calledOnce;
+      expect(updateAvatarSaveStub).to.have.been.calledOnce;
     });
   });
 
