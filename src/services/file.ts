@@ -29,13 +29,21 @@ export default class FileStorageService {
     }
   }
 
-  public async deleteFile(fileName: string): Promise<ResultResponse<string>> {
+  public async deleteFile(fileUrl: string): Promise<ResultResponse<string>> {
     try {
       const storageProvider = configs.filesystems.provider;
 
       if (storageProvider === 'local') {
+        const baseFileUrl = `${configs.filesystems.providers.local.url}/`;
+        const fileName = fileUrl.substring(baseFileUrl.length, fileUrl.length);
+
         return await this.deleteLocalFile(fileName);
       } else {
+        const bucketName = configs.filesystems.providers.s3.bucket;
+        const bucketRegion = configs.filesystems.providers.s3.region;
+        const baseFileUrl = `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/`;
+        const fileName = fileUrl.substring(baseFileUrl.length, fileUrl.length);
+
         return await this.deleteCloudFile(fileName);
       }
     } catch (err) {
@@ -73,8 +81,8 @@ export default class FileStorageService {
   }
 
   private storeCloudFile(fileName: string, base64File: string, fileType: string): Promise<ResultResponse<string>> {
-    const bucketRegion = configs.filesystems.providers.s3.region;
     const bucketName = configs.filesystems.providers.s3.bucket;
+    const bucketRegion = configs.filesystems.providers.s3.region;
 
     return SThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'))
       .then(() => {
@@ -89,8 +97,8 @@ export default class FileStorageService {
   }
 
   private deleteCloudFile(fileName: string): Promise<ResultResponse<string>> {
-    const bucketRegion = configs.filesystems.providers.s3.region;
     const bucketName = configs.filesystems.providers.s3.bucket;
+    const bucketRegion = configs.filesystems.providers.s3.region;
 
     return SThreeClient.deleteFromBucket(fileName)
       .then(() => {

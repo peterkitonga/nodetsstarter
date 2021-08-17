@@ -19,6 +19,7 @@ chai.use(chaiAsPromised);
 const sandbox = sinon.createSandbox();
 const fileStorageService = new FileStorageService();
 const rawFiledata = readFileSync(path.resolve(__dirname, '../../dummy-file.json'), 'utf-8');
+const fileUrl = `https://example.com/path/${Date.now()}.jpeg`;
 const fileData = JSON.parse(rawFiledata);
 const fileName = `${Date.now()}.jpeg`;
 const fileContent = fileData.image;
@@ -221,7 +222,7 @@ describe('src/services/file: class FileStorageService', () => {
       providerStub.value('local');
       unlinkStub.resolves();
 
-      const deletionResponse = await fileStorageService.deleteFile(fileName);
+      const deletionResponse = await fileStorageService.deleteFile(fileUrl);
 
       expect(deletionResponse).to.have.deep.property('status').to.equal('success');
       expect(unlinkStub).to.have.been.called;
@@ -231,17 +232,17 @@ describe('src/services/file: class FileStorageService', () => {
       providerStub.value('s3');
       s3ClientStub.resolves({ status: 'success' });
 
-      const deletionResponse = await fileStorageService.deleteFile(fileName);
+      const deletionResponse = await fileStorageService.deleteFile(fileUrl);
 
       expect(deletionResponse).to.have.deep.property('status').to.equal('success');
       expect(s3ClientStub).to.have.been.called;
     });
 
-    it('should return error message on unsuccessful upload', async () => {
+    it('should return error message on unsuccessful deletion', async () => {
       providerStub.value('local');
       unlinkStub.rejects(new Error('SOME ERROR'));
 
-      await expect(fileStorageService.deleteFile(fileName))
+      await expect(fileStorageService.deleteFile(fileUrl))
         .to.eventually.be.rejected.with.deep.property('status')
         .to.equal('error');
       expect(unlinkStub).to.have.been.called;
