@@ -5,8 +5,8 @@ install:
   - npm install
 before_script:
   - cp .env.example .env
-  - chmod +x ./travis-merge-script.sh
+  - chmod +x travis-merge-script.sh
 script:
   - npm run test:coverage && npm run test:reporter
 after_success:
-  - bash ./travis-merge-script.sh
+  - bash travis-merge-script.sh
