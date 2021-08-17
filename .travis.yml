@@ -3,9 +3,10 @@ node_js:
   - "14.15.1"
 install:
   - npm install
+before_script:
+  - cp .env.example .env
+  - chmod +x travis-merge-script.sh
 script:
   - npm run test:coverage && npm run test:reporter
-before_script:
-  - "cp .env.example .env"
 after_success:
   - ./travis-merge-script.sh
