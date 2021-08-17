@@ -484,6 +484,50 @@ describe('src/services/auth: class AuthService', () => {
     });
   });
 
+  context('updateUser()', () => {
+    let userFindStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      userFindStub = sandbox.stub(User, 'findById');
+    });
+
+    it('should return error message if updating user fails', async () => {
+      const updateUserSaveStub = sandbox.stub().rejects(new Error('SOME ERROR'));
+      userFindStub.resolves({
+        name: userDetails.name,
+        email: userDetails.email,
+        save: updateUserSaveStub,
+      });
+
+      const updateUserResponse = authService.updateUser(userId, userDetails);
+
+      await expect(updateUserResponse).to.eventually.be.rejectedWith(Error);
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(updateUserSaveStub).to.have.been.calledOnce;
+    });
+
+    it('should return user details after successful update', async () => {
+      const updateUserSaveStub = sandbox.stub().resolves({
+        name: userDetails.name,
+        email: userDetails.email,
+        avatar: `https://example.com/path/${Date.now()}.jpeg`,
+        is_activated: true,
+        created_at: new Date().toISOString,
+      });
+      userFindStub.resolves({
+        name: userDetails.name,
+        email: userDetails.email,
+        save: updateUserSaveStub,
+      });
+
+      const updateUserResponse = authService.updateUser(userId, userDetails);
+
+      await expect(updateUserResponse).to.eventually.be.fulfilled.with.nested.property('data.email');
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(updateUserSaveStub).to.have.been.calledOnce;
+    });
+  });
+
   context('updateAvatar()', () => {
     let userFindStub: sinon.SinonStub;
     const fileUrl = `https://example.com/path/${Date.now()}.jpeg`;
