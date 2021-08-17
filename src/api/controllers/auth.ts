@@ -2,20 +2,23 @@ import { Request, Response, NextFunction } from 'express';
 
 import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
+import FileStorageService from '../../services/file';
 import Autobind from '../../common/decorators/autobind';
 import { HttpStatusCodes } from '../../common/enums/http';
 import { UserModel } from '../../common/interfaces/database';
 import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
-import { AuthRequest, ActivationRequest, ResetPasswordRequest } from '../../common/interfaces/requests';
+import { AuthRequest, ActivationRequest, ResetPasswordRequest, FileRequest } from '../../common/interfaces/requests';
 
 import ForbiddenError from '../../common/errors/forbidden';
 import UnauthorizedError from '../../common/errors/unauthorized';
 
 class AuthController {
   private authService: AuthService;
+  private fileStorageService: FileStorageService;
 
   public constructor() {
     this.authService = new AuthService();
+    this.fileStorageService = new FileStorageService();
   }
 
   @Autobind
@@ -190,6 +193,33 @@ class AuthController {
   }
 
   @Autobind
+  public async updateAvatar(
+    req: Request<unknown, unknown, FileRequest>,
+    res: Response<ResultResponse<Partial<UserModel>>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const request = req.body;
+      const { data } = await this.authService.getUser(req.auth!);
+
+      if (data!.avatar) {
+        await this.fileStorageService.deleteFile(data!.avatar);
+      }
+
+      const storeFile = await this.fileStorageService.storeFile(request.file);
+      const updateAvatar = await this.authService.updateAvatar({ user_id: req.auth!, url: storeFile.data! });
+
+      res.status(HttpStatusCodes.OK).json(updateAvatar);
+    } catch (err) {
+      if (!err.statusCode) {
+        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+      }
+
+      next(err);
+    }
+  }
+
+  @Autobind
   public async updatePassword(
     req: Request<unknown, unknown, AuthRequest>,
     res: Response<ResultResponse<null>>,
@@ -199,7 +229,7 @@ class AuthController {
       const request = req.body;
       const updatePassword = await this.authService.updatePassword({ user_id: req.auth!, password: request.password });
 
-      res.status(HttpStatusCodes.CREATED).json(updatePassword);
+      res.status(HttpStatusCodes.OK).json(updatePassword);
     } catch (err) {
       err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
 

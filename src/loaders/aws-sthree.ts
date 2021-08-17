@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, PutObjectCommandOutput, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 import configs from '../configs';
 import { ResultResponse } from '../common/interfaces/responses';
