@@ -484,6 +484,47 @@ describe('src/services/auth: class AuthService', () => {
     });
   });
 
+  context('updateAvatar()', () => {
+    let userFindStub: sinon.SinonStub;
+    const fileUrl = `https://example.com/path/${Date.now()}.jpeg`;
+
+    beforeEach(() => {
+      userFindStub = sandbox.stub(User, 'findById');
+    });
+
+    it('should return error message if updating avatar fails', async () => {
+      const userPasswordSaveStub = sandbox.stub().rejects(new Error('SOME ERROR'));
+      userFindStub.resolves({
+        avatar: fileUrl,
+        save: userPasswordSaveStub,
+      });
+
+      const updatePasswordResponse = authService.updateAvatar({ user_id: userId, url: fileUrl });
+
+      await expect(updatePasswordResponse).to.eventually.be.rejectedWith(Error);
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(userPasswordSaveStub).to.have.been.calledOnce;
+    });
+
+    it('should update avatar for the user with given id', async () => {
+      const userPasswordSaveStub = sandbox.stub().resolves({
+        avatar: fileUrl,
+      });
+      userFindStub.resolves({
+        avatar: fileUrl,
+        save: userPasswordSaveStub,
+      });
+
+      const updatePasswordResponse = authService.updateAvatar({ user_id: userId, url: fileUrl });
+
+      await expect(updatePasswordResponse)
+        .to.eventually.be.fulfilled.with.nested.property('data.avatar')
+        .to.equal(fileUrl);
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(userPasswordSaveStub).to.have.been.calledOnce;
+    });
+  });
+
   context('updatePassword()', () => {
     let userFindStub: sinon.SinonStub;
     let bcryptHashStub: sinon.SinonStub;
