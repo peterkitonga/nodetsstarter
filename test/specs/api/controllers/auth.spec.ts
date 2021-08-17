@@ -1,8 +1,10 @@
+import path from 'path';
 import chai from 'chai';
 import sinon from 'sinon';
 import bcrypt from 'bcryptjs';
 import express from 'express';
 import request from 'supertest';
+import { readFileSync } from 'fs';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
@@ -14,9 +16,11 @@ import Mailer from '../../../../src/loaders/nodemailer';
 import ExpressApp from '../../../../src/loaders/express';
 import MailerService from '../../../../src/services/mailer';
 import WinstonLogger from '../../../../src/loaders/winston';
+import FileStorageService from '../../../../src/services/file';
 import RefreshToken from '../../../../src/models/refresh-token';
 import PasswordReset from '../../../../src/models/password-reset';
 import { HttpStatusCodes } from '../../../../src/common/enums/http';
+import NotFoundError from '../../../../src/common/errors/not-found';
 
 const { expect } = chai;
 
@@ -35,6 +39,7 @@ describe('src/api/controllers/auth', () => {
   let winstonLoggerErrorStub: sinon.SinonStub;
 
   beforeEach(() => {
+    sandbox.stub(configs.filesystems, 'limit').value('10mb');
     sandbox.stub(configs.app.api, 'prefix').returns('/api/v2');
     winstonLoggerErrorStub = sandbox.stub(WinstonLogger, 'error');
 
@@ -718,26 +723,6 @@ describe('src/api/controllers/auth', () => {
       userFindStub = sandbox.stub(User, 'findById');
     });
 
-    it('should return error if bearer token is missing', async () => {
-      const res = await request(ExpressApp['app']).get('/api/v2/auth/user');
-
-      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
-      expect(res.body.message).to.exist.and.match(/Bearer token is required/);
-      expect(jwtVerifyStub).to.have.not.been.called;
-      expect(saltExistsStub).to.have.not.been.called;
-    });
-
-    it('should return error if bearer token has expired', async () => {
-      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
-
-      const res = await request(ExpressApp['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
-
-      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
-      expect(res.body.message).to.exist.and.match(/Bearer token is expired/);
-      expect(jwtVerifyStub).to.have.been.calledOnce;
-      expect(saltExistsStub).to.have.not.been.called;
-    });
-
     it('should catch errors if fetching user data fails', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
@@ -776,6 +761,152 @@ describe('src/api/controllers/auth', () => {
       expect(jwtVerifyStub).to.have.been.calledOnce;
       expect(saltExistsStub).to.have.been.calledOnce;
       expect(userFindStub).to.have.been.calledOnce;
+    });
+  });
+
+  context('PUT /{API PREFIX}/auth/update/avatar', () => {
+    let userFindStub: sinon.SinonStub;
+    let jwtVerifyStub: sinon.SinonStub;
+    let storeFileStub: sinon.SinonStub;
+    let deleteFileStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
+    const avatarUrl = `https://example.com/path/${Date.now()}.jpeg`;
+    const rawFiledata = readFileSync(path.resolve(__dirname, '../../../dummy-file.json'), 'utf-8');
+    const fileData = JSON.parse(rawFiledata);
+
+    beforeEach(() => {
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
+      userFindStub = sandbox.stub(User, 'findById');
+      storeFileStub = sandbox.stub(FileStorageService.prototype, 'storeFile');
+      deleteFileStub = sandbox.stub(FileStorageService.prototype, 'deleteFile');
+    });
+
+    it('should return validation error message if file field is missing', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/avatar')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "file" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if file is not a valid data uri', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/avatar')
+        .send({ file: 'someinvaliddatauri' })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "file" field should be a valid data uri');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if file has an unsupported mime type', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const unsupportedFile = fileData.invalid_image;
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/avatar')
+        .send({ file: unsupportedFile })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "file" field should be a png, jpg, gif or svg');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error message if upload fails', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.resolves({
+        name: userName,
+        email: userEmail,
+      });
+      storeFileStub.rejects(new NotFoundError('FILE STORAGE NOT FOUND'));
+
+      const validFile = fileData.image;
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/avatar')
+        .send({ file: validFile })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.NOT_FOUND);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(deleteFileStub).to.have.not.been.called;
+      expect(userFindStub).to.have.been.calledOnce;
+    });
+
+    it('should catch general errors if update fails', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.resolves({
+        name: userName,
+        email: userEmail,
+      });
+      storeFileStub.rejects(new Error('SOME ERROR'));
+
+      const validFile = fileData.image;
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/avatar')
+        .send({ file: validFile })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(deleteFileStub).to.have.not.been.called;
+      expect(userFindStub).to.have.been.calledOnce;
+    });
+
+    it('should delete old avatar, store new avatar and return url', async () => {
+      const updateAvatarSaveStub = sandbox.stub().resolves({
+        avatar: avatarUrl,
+      });
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.resolves({
+        avatar: avatarUrl,
+        save: updateAvatarSaveStub,
+      });
+      deleteFileStub.resolves({ data: avatarUrl });
+      storeFileStub.resolves({ data: avatarUrl });
+
+      const validFile = fileData.image;
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/avatar')
+        .send({ file: validFile })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.body.data).to.have.deep.property('avatar');
+      expect(deleteFileStub).to.have.been.calledOnceWith(avatarUrl);
+      expect(userFindStub).to.have.been.calledTwice;
     });
   });
 
@@ -826,31 +957,6 @@ describe('src/api/controllers/auth', () => {
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
-    it('should return error if bearer token is missing', async () => {
-      const res = await request(ExpressApp['app'])
-        .put('/api/v2/auth/update/password')
-        .send({ password: userPassword, password_confirmation: 'otherpassword' });
-
-      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
-      expect(res.body.message).to.exist.and.match(/Bearer token is required/);
-      expect(jwtVerifyStub).to.have.not.been.called;
-      expect(saltExistsStub).to.have.not.been.called;
-    });
-
-    it('should return error if bearer token has expired', async () => {
-      jwtVerifyStub.throws(new TokenExpiredError('jwt expired', new Date()));
-
-      const res = await request(ExpressApp['app'])
-        .put('/api/v2/auth/update/password')
-        .send({ password: userPassword, password_confirmation: 'otherpassword' })
-        .set('Authorization', `Bearer ${jwtToken}`);
-
-      expect(res.status).to.equal(HttpStatusCodes.UNAUTHORIZED);
-      expect(res.body.message).to.exist.and.match(/Bearer token is expired/);
-      expect(jwtVerifyStub).to.have.been.calledOnce;
-      expect(saltExistsStub).to.have.not.been.called;
-    });
-
     it('should return error message if updating password is unsuccessful', async () => {
       jwtVerifyStub.returns({
         auth: 'someobjectid',
@@ -882,6 +988,7 @@ describe('src/api/controllers/auth', () => {
         salt: 'SOME SALT STRING',
       });
       saltExistsStub.resolves(true);
+      bcryptHashStub.resolves('hashedpassword');
       const userPasswordSaveStub = sandbox.stub().resolves({
         password: 'hashedpassword',
       });
@@ -895,11 +1002,12 @@ describe('src/api/controllers/auth', () => {
         .send({ password: userPassword, password_confirmation: userPassword })
         .set('Authorization', `Bearer ${jwtToken}`);
 
-      expect(res.status).to.equal(HttpStatusCodes.CREATED);
+      expect(res.status).to.equal(HttpStatusCodes.OK);
       expect(res.body.message).to.exist.and.have.equal('Successfully updated password.');
       expect(jwtVerifyStub).to.have.been.calledOnce;
       expect(saltExistsStub).to.have.been.calledOnce;
       expect(userFindStub).to.have.been.calledOnce;
+      expect(bcryptHashStub).to.have.been.calledOnce;
       expect(userPasswordSaveStub).to.have.been.calledOnce;
     });
   });
