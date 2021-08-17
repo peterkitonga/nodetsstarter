@@ -1,8 +1,8 @@
-import joi from 'joi';
+import joi, { CustomHelpers } from 'joi';
 import { Request, Response, NextFunction } from 'express';
 
 import ValidationError from '../../../common/errors/validation';
-import { AuthRequest, ResetPasswordRequest } from '../../../common/interfaces/requests';
+import { AuthRequest, FileRequest, ResetPasswordRequest } from '../../../common/interfaces/requests';
 
 class AuthValidator {
   public constructor() {
@@ -185,6 +185,45 @@ class AuthValidator {
       });
 
       await updatePasswordSchema.validateAsync(request);
+
+      next();
+    } catch (err) {
+      const { message } = err.details[0];
+
+      next(new ValidationError(message, request));
+    }
+  }
+
+  public async updateAvatar(
+    req: Request<unknown, unknown, FileRequest>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    const request = req.body;
+
+    try {
+      const method = (value: string, helpers: CustomHelpers) => {
+        const fileMimeType = value.substring('data:'.length, value.indexOf(';base64'));
+        const validMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
+
+        if (!validMimeTypes.includes(fileMimeType)) {
+          return helpers.error('any.invalid');
+        } else {
+          return value;
+        }
+      };
+
+      const updateAvatarSchema = joi.object({
+        file: joi.string().dataUri().trim(true).required().custom(method).label('file').messages({
+          'string.base': `The {#label} field should be text`,
+          'string.empty': `The {#label} field cannot be empty`,
+          'string.dataUri': `The {#label} field should be a valid data uri`,
+          'any.invalid': `The {#label} field should be a png, jpg, gif or svg`,
+          'any.required': `The {#label} field is required`,
+        }),
+      });
+
+      await updateAvatarSchema.validateAsync(request);
 
       next();
     } catch (err) {
