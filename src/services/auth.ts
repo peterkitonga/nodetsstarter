@@ -224,6 +224,25 @@ export default class AuthService {
     }
   }
 
+  public async updateAvatar({
+    user_id,
+    url,
+  }: Record<'user_id' | 'url', string>): Promise<ResultResponse<Partial<UserModel>>> {
+    try {
+      const user = await User.findById(user_id);
+      user!.avatar = url;
+      const result = await user!.save();
+      const { name, email, avatar, is_activated, created_at } = result;
+
+      return {
+        status: 'success',
+        data: { name, email, avatar, is_activated, created_at },
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
+
   public async updatePassword({
     user_id,
     password,
