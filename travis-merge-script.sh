@@ -10,6 +10,6 @@ else
 
     git fetch --all || exit
     git checkout master || exit
-    git merge --no-ff -m "Merge pull request #${TRAVIS_PULL_REQUEST} from peterkitonga/${TRAVIS_BRANCH}" "$TRAVIS_COMMIT" || exit
-    git push https://${GITHUB_TOKEN}@github.com/peterkitonga/nodetsstarter.git
+    git merge --no-ff -m "Merge pull request #$TRAVIS_PULL_REQUEST from peterkitonga/$TRAVIS_BRANCH" "$TRAVIS_COMMIT" || exit
+    git push "https://$GITHUB_TOKEN@github.com/peterkitonga/nodetsstarter.git"
 fi
