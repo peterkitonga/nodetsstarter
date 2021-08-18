@@ -1,6 +1,11 @@
 language: node_js
 node_js:
   - "14.15.1"
+branches:
+  only:
+    - master
+    - develop
+    - /^fix-.*$/
 install:
   - npm install
 before_script:
