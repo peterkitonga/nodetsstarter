@@ -17,13 +17,17 @@ class WinstonLogger {
         format.splat(),
         format.json(),
       ),
-      transports: [
-        new transports.File({ filename: storagePath('logs/error.log'), level: 'error' }),
-        process.env.NODE_ENV !== 'production'
-          ? new transports.Console({ format: format.combine(format.colorize(), format.simple()) })
-          : new transports.File({ filename: storagePath('logs/combined.log') }),
-      ],
+      transports: [new transports.File({ filename: storagePath('logs/error.log'), level: 'error' })],
     });
+    this.extendTransports();
+  }
+
+  public extendTransports(): void {
+    if (configs.app.env !== 'production') {
+      this.logger.add(new transports.Console({ format: format.combine(format.colorize(), format.simple()) }));
+    } else {
+      this.logger.add(new transports.File({ filename: storagePath('logs/combined.log') }));
+    }
   }
 
   public info(message: string): void {
