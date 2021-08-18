@@ -12,6 +12,7 @@ import express, { Request, Response, NextFunction, Application, json } from 'exp
 dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../.env') }));
 /* ======================= OTHER MODULES GO BELOW ======================= */
 
+import { Server } from 'http';
 import configs from '../configs';
 import routes from '../api/routes';
 import WinstonLogger from './winston';
@@ -44,26 +45,29 @@ class ExpressApp {
     this.listen();
   }
 
+  public gracefulShutdown(server: Server) {
+    return server.close(() => {
+      WinstonLogger.info('Server shutdown successfully!');
+
+      MongooseConnect.disconnect()
+        .then((res) => WinstonLogger.info(res.message!))
+        .catch((err: Error) => WinstonLogger.error(err.message));
+    });
+  }
+
   public listen(): void {
     const server = this.app.listen(configs.app.port);
-    const gracefulShutdown = () => {
-      return server.close(async () => {
-        const { message } = await MongooseConnect.disconnect();
-        WinstonLogger.info('Server shutdown successfully!');
-        WinstonLogger.info(message!);
-      });
-    };
 
     WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
 
     process.on('SIGTERM', () => {
       WinstonLogger.info('Starting graceful shutdown of server...');
-      gracefulShutdown();
+      this.gracefulShutdown(server);
     });
 
     process.on('SIGINT', () => {
       WinstonLogger.info('Exiting server process cleanly...');
-      gracefulShutdown();
+      this.gracefulShutdown(server);
     });
   }
 
@@ -120,12 +124,12 @@ class ExpressApp {
 
   public handleErrorMiddleware(): void {
     this.app.use((err: BaseError, req: Request, res: Response, next: NextFunction) => {
-      const { statusCode, message, data } = err;
-      const code = statusCode || HttpStatusCodes.INTERNAL_SERVER;
+      const { statusCode, message, data, stack } = err;
 
       WinstonLogger.error(message);
+      WinstonLogger.error(stack!);
 
-      res.status(code).json({ status: 'error', message, data });
+      res.status(statusCode).json({ status: 'error', message, data });
     });
   }
 }

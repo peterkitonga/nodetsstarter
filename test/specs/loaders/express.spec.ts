@@ -1,7 +1,9 @@
 import chai from 'chai';
 import sinon from 'sinon';
+import { Server } from 'http';
 import express from 'express';
 import request from 'supertest';
+import mongoose from 'mongoose';
 import sinonChai from 'sinon-chai';
 
 import configs from '../../../src/configs';
@@ -109,6 +111,60 @@ describe('src/loaders/express: class ExpressApp', () => {
     });
   });
 
+  context('gracefulShutdown()', () => {
+    let closeServerStub: sinon.SinonStub;
+    let serverListenStub: sinon.SinonStub;
+    let winstonLoggerInfoStub: sinon.SinonStub;
+    let winstonLoggerErrorStub: sinon.SinonStub;
+    let mongooseDisconnectStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      closeServerStub = sandbox.stub().returns(new Server());
+      winstonLoggerInfoStub = sandbox.stub(WinstonLogger, 'info');
+      winstonLoggerErrorStub = sandbox.stub(WinstonLogger, 'error');
+      mongooseDisconnectStub = sandbox.stub(mongoose.connection, 'close');
+    });
+
+    it('should return instance of server', () => {
+      serverListenStub = sandbox.stub(express(), 'listen');
+      serverListenStub.returns({
+        close: closeServerStub,
+      });
+      mongooseDisconnectStub.resolves({ message: 'MONGO DISCONNECTED!' });
+
+      const server = express().listen(8000);
+      const gracefulShutdown = ExpressApp.gracefulShutdown(server);
+
+      expect(gracefulShutdown).to.be.an.instanceOf(Server);
+    });
+
+    it('should catch errors during shutdown', () => {
+      serverListenStub = sandbox.stub(express(), 'listen');
+      serverListenStub.returns({
+        close: closeServerStub,
+      });
+      mongooseDisconnectStub.rejects({ message: 'SOME ERROR' });
+
+      const server = express().listen(8000);
+      const gracefulShutdown = ExpressApp.gracefulShutdown(server);
+
+      expect(gracefulShutdown).to.be.an.instanceOf(Server);
+    });
+
+    it('should shutdown given server', () => {
+      serverListenStub = sandbox.stub(ExpressApp['app'], 'listen');
+      serverListenStub.returns({
+        close: closeServerStub,
+      });
+      mongooseDisconnectStub.resolves({ message: 'MONGO DISCONNECTED!' });
+
+      const server = ExpressApp['app'].listen(8000);
+      ExpressApp.gracefulShutdown(server);
+
+      expect(closeServerStub).to.have.been.calledOnce;
+    });
+  });
+
   context('listen()', () => {
     let serverListenStub: sinon.SinonStub;
     let winstonLoggerInfoStub: sinon.SinonStub;
@@ -128,13 +184,30 @@ describe('src/loaders/express: class ExpressApp', () => {
       expect(winstonLoggerInfoStub).to.have.been.calledOnce;
     });
 
-    it('should handle graceful shutdown', () => {
-      const processOnStub = sandbox.stub(process, 'on');
+    it('should handle graceful shutdown with "SIGTERM"', (done) => {
+      const shutdownStub = sandbox.stub(ExpressApp, 'gracefulShutdown');
 
       ExpressApp.listen();
 
-      expect(processOnStub).to.have.been.calledTwice;
-      expect(winstonLoggerInfoStub).to.have.been.calledOnce;
+      process.once('SIGTERM', () => {
+        expect(winstonLoggerInfoStub).to.have.been.called;
+        expect(shutdownStub).to.have.been.called;
+        done();
+      });
+      process.kill(process.pid, 'SIGTERM');
+    });
+
+    it('should handle graceful shutdown with "SIGINT"', (done) => {
+      const shutdownStub = sandbox.stub(ExpressApp, 'gracefulShutdown');
+
+      ExpressApp.listen();
+
+      process.once('SIGINT', () => {
+        expect(winstonLoggerInfoStub).to.have.been.called;
+        expect(shutdownStub).to.have.been.called;
+        done();
+      });
+      process.kill(process.pid, 'SIGINT');
     });
   });
 
@@ -318,7 +391,7 @@ describe('src/loaders/express: class ExpressApp', () => {
       const res = await request(ExpressApp['app']).post('/api/v2/auth/login').send({ email: 'disdegnosi@dunsoi.com' });
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
       expect(res.body.message).to.be.a('string');
-      expect(winstonLoggerErrorStub).to.have.been.calledOnce;
+      expect(winstonLoggerErrorStub).to.have.been.calledTwice;
     });
   });
 });
