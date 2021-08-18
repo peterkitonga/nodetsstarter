@@ -1,9 +1,7 @@
 #!/bin/bash
 set -u
 
-if [ "$TRAVIS_BRANCH" != "develop" ]; then
-    echo "Pull request ${TRAVIS_PULL_REQUEST}..."
-    echo "Pull request branch ${TRAVIS_PULL_REQUEST_BRANCH}..."
+if [ "$TRAVIS_PULL_REQUEST_BRANCH" != "develop" ]; then
     echo "Skipping merge from ${TRAVIS_BRANCH}..."
     exit 0
 else
@@ -17,8 +15,8 @@ else
 
     echo "Checkout to master and merge..."
     git checkout master
-    git merge --no-ff -m "Merge pull request #${TRAVIS_PULL_REQUEST} from peterkitonga/${TRAVIS_BRANCH}" "$TRAVIS_COMMIT"
+    git merge --no-ff -m "Merge pull request #${TRAVIS_PULL_REQUEST} from peterkitonga/${TRAVIS_PULL_REQUEST_BRANCH}" "$TRAVIS_PULL_REQUEST_SHA"
 
-    echo "Pushing merged changes..."
-    git push "https://${GITHUB_TOKEN}@github.com/peterkitonga/nodetsstarter.git" >/dev/null 2>&1
+    echo "Pushing merged changes to ${TRAVIS_REPO_SLUG}..."
+    git push "https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git" >/dev/null 2>&1
 fi
