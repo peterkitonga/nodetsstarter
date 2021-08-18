@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { unlink, symlink, writeFile } from 'fs/promises';
 
 import configs from '../configs';
@@ -16,8 +17,8 @@ export default class FileStorageService {
 
       const fileExt = base64String.substring(base64String.indexOf('/') + 1, base64String.indexOf(';base64'));
       const fileType = base64String.substring('data:'.length, base64String.indexOf(';base64'));
+      const fileName = `${crypto.randomBytes(12).toString('hex')}-${Date.now()}.${fileExt}`;
       const base64File = base64String.split(';base64,').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
 
       if (storageProvider === 'local') {
         return await this.storeLocalFile(fileName, base64File!);
