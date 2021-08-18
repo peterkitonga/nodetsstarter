@@ -764,6 +764,106 @@ describe('src/api/controllers/auth', () => {
     });
   });
 
+  context('PUT /{API PREFIX}/auth/update/user', () => {
+    let userFindStub: sinon.SinonStub;
+    let jwtVerifyStub: sinon.SinonStub;
+    let saltExistsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      jwtVerifyStub = sandbox.stub(jwt, 'verify');
+      saltExistsStub = sandbox.stub(Salt, 'exists');
+      userFindStub = sandbox.stub(User, 'findById');
+    });
+
+    it('should return validation error message if name field is missing', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/user')
+        .send({ email: userEmail })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "name" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return validation error message if email field is missing', async () => {
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/user')
+        .send({ name: userName })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).to.equal('The "email" field is required');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return error message if updating user fails', async () => {
+      const updateUserSaveStub = sandbox.stub().rejects(new Error('SOME ERROR'));
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.resolves({
+        name: userName,
+        email: userEmail,
+        save: updateUserSaveStub,
+      });
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/user')
+        .send({ name: userName, email: userEmail })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.INTERNAL_SERVER);
+      expect(res.body.message).to.exist.and.be.a('string');
+      expect(winstonLoggerErrorStub).to.have.been.called;
+    });
+
+    it('should return user details after a successful update', async () => {
+      const updateUserSaveStub = sandbox.stub().resolves({
+        name: userName,
+        email: userEmail,
+        avatar: `https://example.com/path/${Date.now()}.jpeg`,
+        is_activated: true,
+        created_at: new Date().toISOString,
+      });
+      jwtVerifyStub.returns({
+        auth: 'someobjectid',
+        salt: 'SOME SALT STRING',
+      });
+      saltExistsStub.resolves(true);
+      userFindStub.resolves({
+        name: userName,
+        email: userEmail,
+        save: updateUserSaveStub,
+      });
+
+      const res = await request(ExpressApp['app'])
+        .put('/api/v2/auth/update/user')
+        .send({ name: userName, email: userEmail })
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(res.status).to.equal(HttpStatusCodes.OK);
+      expect(res.body.data).to.have.deep.property('name');
+      expect(res.body.data).to.have.deep.property('email');
+      expect(userFindStub).to.have.been.calledOnce;
+      expect(updateUserSaveStub).to.have.been.calledOnce;
+    });
+  });
+
   context('PUT /{API PREFIX}/auth/update/avatar', () => {
     let userFindStub: sinon.SinonStub;
     let jwtVerifyStub: sinon.SinonStub;

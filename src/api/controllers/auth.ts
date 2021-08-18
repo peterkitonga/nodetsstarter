@@ -193,6 +193,24 @@ class AuthController {
   }
 
   @Autobind
+  public async updateUser(
+    req: Request<unknown, unknown, AuthRequest>,
+    res: Response<ResultResponse<Partial<UserModel>>>,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const request = req.body;
+      const updateUser = await this.authService.updateUser(req.auth!, request);
+
+      res.status(HttpStatusCodes.OK).json(updateUser);
+    } catch (err) {
+      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
+
+      next(err);
+    }
+  }
+
+  @Autobind
   public async updateAvatar(
     req: Request<unknown, unknown, FileRequest>,
     res: Response<ResultResponse<Partial<UserModel>>>,
