@@ -192,7 +192,7 @@ export default class AuthService {
             data: {
               token: generatedTokens.data!.token,
               refresh_token: generatedTokens.data!.refresh_token,
-              lifetime: configs.app.auth.jwt.lifetime,
+              lifetime: decodedToken.duration.toString(),
             },
           };
         } else {

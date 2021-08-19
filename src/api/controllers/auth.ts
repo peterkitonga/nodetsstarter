@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
+import configs from '../../configs';
 import AuthService from '../../services/auth';
 import MailerService from '../../services/mailer';
 import FileStorageService from '../../services/file';
@@ -159,10 +160,12 @@ class AuthController {
         const { token, refresh_token, lifetime } = refreshToken.data!;
 
         res.cookie('refresh_token', refresh_token, {
-          maxAge: Number(lifetime) * 2 * 1000,
+          maxAge: 3600 * Number(lifetime) * 1000,
           httpOnly: true,
         });
-        res.status(HttpStatusCodes.CREATED).json({ status: 'success', data: { token, lifetime } });
+        res
+          .status(HttpStatusCodes.CREATED)
+          .json({ status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime } });
       } else {
         throw new UnauthorizedError(`Authentication failed. Please login.`);
       }
