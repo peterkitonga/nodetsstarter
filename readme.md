@@ -1,6 +1,6 @@
 <div align="center">
 <h1>Node TS Starter</h1>
-<a href="https://travis-ci.com/peterkitonga/nodetsstarter" target="_blank"><img alt="Build Status" src="https://img.shields.io/travis/com/peterkitonga/nodetsstarter/master?style=for-the-badge"></a> <a href="https://coveralls.io/github/peterkitonga/nodetsstarter" target="_blank"><img alt="Coverage Status" src="https://img.shields.io/coveralls/github/peterkitonga/nodetsstarter/master?style=for-the-badge"></a>
+<a href="https://app.travis-ci.com/github/peterkitonga/nodetsstarter" target="_blank"><img alt="Build Status" src="https://img.shields.io/travis/com/peterkitonga/nodetsstarter/master?style=for-the-badge"></a> <a href="https://coveralls.io/github/peterkitonga/nodetsstarter" target="_blank"><img alt="Coverage Status" src="https://img.shields.io/coveralls/github/peterkitonga/nodetsstarter/master?style=for-the-badge"></a>
 <p>This starter was created to serve as a starting template for a Node.js API built with Express and TypeScript.</p>
 </div>
 
