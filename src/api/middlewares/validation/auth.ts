@@ -50,9 +50,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 
@@ -88,9 +90,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 
@@ -115,9 +119,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 
@@ -154,9 +160,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 
@@ -188,9 +196,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 
@@ -227,9 +237,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 
@@ -261,9 +273,11 @@ class AuthValidator {
 
       next();
     } catch (err) {
-      const { message } = err.details[0];
+      if (err instanceof joi.ValidationError) {
+        const { message } = err.details[0];
 
-      next(new ValidationError(message, request));
+        next(new ValidationError(message, request));
+      }
     }
   }
 }
