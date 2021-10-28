@@ -235,12 +235,12 @@ describe('src/loaders/express: class ExpressApp', () => {
 
     it('should catch errors from database', async () => {
       const errorMessage = 'MONGO ERROR';
-      mongooseConnectStub.rejects({ status: 'error', message: errorMessage });
+      mongooseConnectStub.rejects(new Error(errorMessage));
 
       await ExpressApp.connectDatabase();
 
       expect(mongooseConnectStub).to.be.calledOnce;
-      expect(winstonLoggerErrorStub).to.be.calledOnceWith(errorMessage);
+      expect(winstonLoggerErrorStub).to.have.been.calledWith(errorMessage);
     });
   });
 

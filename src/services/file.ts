@@ -62,9 +62,9 @@ export default class FileStorageService {
       await writeFile(filePath, base64File!, { encoding: 'base64' });
       await symlink(absoluteTarget, absolutePath);
 
-      return Promise.resolve({ status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` });
+      return { status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` };
     } catch (err) {
-      return Promise.reject({ status: 'error', message: err.message });
+      throw err;
     }
   }
 
@@ -75,9 +75,9 @@ export default class FileStorageService {
       await unlink(publicPath(`storage/${fileName}`));
       await unlink(filePath);
 
-      return Promise.resolve({ status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` });
+      return { status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` };
     } catch (err) {
-      return Promise.reject({ status: 'error', message: err.message });
+      throw err;
     }
   }
 

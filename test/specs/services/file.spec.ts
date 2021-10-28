@@ -58,9 +58,7 @@ describe('src/services/file: class FileStorageService', () => {
       writeFileStub.rejects(new Error('SOME ERROR'));
       symlinkStub.resolves();
 
-      await expect(storeLocalFile(fileName, fileContent))
-        .to.eventually.be.rejected.with.deep.property('status')
-        .to.equal('error');
+      await expect(storeLocalFile(fileName, fileContent)).to.eventually.be.rejectedWith('SOME ERROR');
       expect(writeFileStub).to.have.been.calledOnce;
       expect(symlinkStub).to.not.have.been.called;
     });
@@ -90,7 +88,7 @@ describe('src/services/file: class FileStorageService', () => {
     it('should return error message if deletion fails', async () => {
       unlinkStub.rejects(new Error('SOME ERROR'));
 
-      await expect(deleteLocalFile(fileName)).to.eventually.be.rejected.with.deep.property('status').to.equal('error');
+      await expect(deleteLocalFile(fileName)).to.eventually.be.rejectedWith('SOME ERROR');
       expect(unlinkStub).to.have.been.calledOnce;
     });
   });
@@ -200,9 +198,7 @@ describe('src/services/file: class FileStorageService', () => {
       providerStub.value('local');
       writeFileStub.rejects(new Error('SOME ERROR'));
 
-      await expect(fileStorageService.storeFile(fileContent))
-        .to.eventually.be.rejected.with.deep.property('status')
-        .to.equal('error');
+      await expect(fileStorageService.storeFile(fileContent)).to.eventually.be.rejectedWith('SOME ERROR');
       expect(writeFileStub).to.have.been.called;
     });
   });
@@ -242,9 +238,7 @@ describe('src/services/file: class FileStorageService', () => {
       providerStub.value('local');
       unlinkStub.rejects(new Error('SOME ERROR'));
 
-      await expect(fileStorageService.deleteFile(fileUrl))
-        .to.eventually.be.rejected.with.deep.property('status')
-        .to.equal('error');
+      await expect(fileStorageService.deleteFile(fileUrl)).to.eventually.be.rejectedWith('SOME ERROR');
       expect(unlinkStub).to.have.been.called;
     });
   });

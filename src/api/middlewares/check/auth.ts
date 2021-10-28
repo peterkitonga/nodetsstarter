@@ -43,10 +43,6 @@ class AuthCheck {
       if (err instanceof TokenExpiredError) {
         next(new UnauthorizedError('Unauthorized. Bearer token is expired.'));
       } else {
-        if (!err.statusCode) {
-          err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-        }
-
         next(err);
       }
     }

@@ -39,10 +39,6 @@ class AuthController {
         message: `Successfully registered. Please check your email '${request.email}' for the activation link.`,
       });
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -71,10 +67,6 @@ class AuthController {
       });
       res.status(HttpStatusCodes.OK).json({ status: 'success', data: { token, lifetime, auth } });
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -93,10 +85,6 @@ class AuthController {
         .status(HttpStatusCodes.OK)
         .json({ status: 'status', message: `User with email '${activation.data!.email}' successfully activated.` });
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -117,10 +105,6 @@ class AuthController {
         .status(HttpStatusCodes.CREATED)
         .json({ status: 'status', message: `A password reset link has been sent to '${request.email}'.` });
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -140,10 +124,6 @@ class AuthController {
         message: `Password for '${resetPassword!.data!.email}' has been reset successfully.`,
       });
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -170,10 +150,6 @@ class AuthController {
         throw new UnauthorizedError(`Authentication failed. Please login.`);
       }
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -189,8 +165,6 @@ class AuthController {
 
       res.status(HttpStatusCodes.OK).json(getUser);
     } catch (err) {
-      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-
       next(err);
     }
   }
@@ -207,8 +181,6 @@ class AuthController {
 
       res.status(HttpStatusCodes.OK).json(updateUser);
     } catch (err) {
-      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-
       next(err);
     }
   }
@@ -232,10 +204,6 @@ class AuthController {
 
       res.status(HttpStatusCodes.OK).json(updateAvatar);
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }
@@ -252,8 +220,6 @@ class AuthController {
 
       res.status(HttpStatusCodes.OK).json(updatePassword);
     } catch (err) {
-      err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-
       next(err);
     }
   }
@@ -270,10 +236,6 @@ class AuthController {
         throw new ForbiddenError(`Logout failed. Refresh token missing.`);
       }
     } catch (err) {
-      if (!err.statusCode) {
-        err.statusCode = HttpStatusCodes.INTERNAL_SERVER;
-      }
-
       next(err);
     }
   }

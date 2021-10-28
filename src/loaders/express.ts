@@ -77,7 +77,9 @@ class ExpressApp {
 
       WinstonLogger.info(message!);
     } catch (err) {
-      WinstonLogger.error(err.message);
+      if (err instanceof Error) {
+        WinstonLogger.error(err.message);
+      }
     }
   }
 
@@ -124,12 +126,17 @@ class ExpressApp {
 
   public handleErrorMiddleware(): void {
     this.app.use((err: BaseError, req: Request, res: Response, next: NextFunction) => {
+      let assignedStatusCode = HttpStatusCodes.INTERNAL_SERVER;
       const { statusCode, message, data, stack } = err;
 
       WinstonLogger.error(message);
       WinstonLogger.error(stack!);
 
-      res.status(statusCode).json({ status: 'error', message, data });
+      if (statusCode) {
+        assignedStatusCode = statusCode;
+      }
+
+      res.status(assignedStatusCode).json({ status: 'error', message, data });
     });
   }
 }
