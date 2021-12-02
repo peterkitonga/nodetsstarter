@@ -180,7 +180,7 @@ export default class AuthService {
         if (isValidToken) {
           const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
           const authUser = await User.findById(existingToken!.user);
-          await Salt.deleteOne({ _id: decodedToken.salt });
+          await Salt.deleteOne({ salt: decodedToken.salt });
 
           const generatedTokens = await this.generateTokens({
             user_id: authUser!._id.toString(),
