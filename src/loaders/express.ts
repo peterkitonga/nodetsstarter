@@ -88,7 +88,7 @@ class ExpressApp {
   }
 
   public setupCors(): void {
-    this.app.use(cors());
+    this.app.use(cors({ origin: true, credentials: true }));
   }
 
   public setupHelmet(): void {
