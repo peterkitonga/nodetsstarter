@@ -68,30 +68,30 @@ describe('src/api/controllers/auth', () => {
     it('should return validation error message if name field is missing', async () => {
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/register')
-        .send({ email: userEmail, password: userPassword });
+        .send({ email: userEmail, password: userPassword, password_confirmation: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "name" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
     it('should return validation error message if email field is missing', async () => {
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/register')
-        .send({ name: userName, password: userPassword });
+        .send({ name: userName, password: userPassword, password_confirmation: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "email" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
     it('should return validation error message if password field is missing', async () => {
       const res = await request(ExpressApp['app'])
         .post('/api/v2/auth/register')
-        .send({ name: userName, email: userEmail });
+        .send({ name: userName, email: userEmail, password_confirmation: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "password" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -181,7 +181,7 @@ describe('src/api/controllers/auth', () => {
         .send({ password: userPassword, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "email" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -191,7 +191,7 @@ describe('src/api/controllers/auth', () => {
         .send({ email: userEmail, remember_me: true });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "password" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -201,7 +201,7 @@ describe('src/api/controllers/auth', () => {
         .send({ email: userEmail, password: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "remember_me" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -446,7 +446,7 @@ describe('src/api/controllers/auth', () => {
       const res = await request(ExpressApp['app']).post('/api/v2/auth/send/reset/link').send({});
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "email" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -512,7 +512,7 @@ describe('src/api/controllers/auth', () => {
         .send({ password: userPassword, password_confirmation: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "token" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -522,7 +522,7 @@ describe('src/api/controllers/auth', () => {
         .send({ token: resetToken, password_confirmation: userPassword });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "password" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -532,7 +532,7 @@ describe('src/api/controllers/auth', () => {
         .send({ token: resetToken, password: userPassword, password_confirmation: 'otherpassword' });
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "password_confirmation" field should match the password');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -788,7 +788,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "name" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -805,7 +805,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "email" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -894,7 +894,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "file" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -911,7 +911,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "file" field should be a valid data uri');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -929,7 +929,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "file" field should be a png, jpg, gif or svg');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -1036,7 +1036,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "password" field is required');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 
@@ -1053,7 +1053,7 @@ describe('src/api/controllers/auth', () => {
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).to.equal(HttpStatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.message).to.equal('The "password_confirmation" field should match the password');
+      expect(res.body.message).to.equal('There are validation errors for your inputs');
       expect(winstonLoggerErrorStub).to.have.been.called;
     });
 

@@ -77,9 +77,9 @@ class ExpressApp {
 
       WinstonLogger.info(message!);
     } catch (err) {
-      if (err instanceof Error) {
-        WinstonLogger.error(err.message);
-      }
+      const error = err as Error;
+
+      WinstonLogger.error(error.message);
     }
   }
 
