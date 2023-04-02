@@ -20,11 +20,12 @@
 - [x] Error handling middleware
 - [x] Logging setup for errors and data
 - [x] Handle graceful shutdown of server
-- [ ] Dependency injection for the service layer
 - [x] API validation logic with joi
 - [x] Unit tests with mocha, chai & sinon
 - [x] Continuous integration with TravisCI
 - [x] Coverage reports with istanbul & Coveralls
+- [ ] Switch to JEST for unit tests
+- [ ] Dependency injection for the service layer
 - [ ] Containerized setup with docker-compose
 
 ## Folder structure
