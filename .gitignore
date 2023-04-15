@@ -16,7 +16,7 @@ dist
 
 # Coverage report directories
 .nyc_output
-test/coverage
+tests/coverage
 
 # Miscellaneous
 .DS_Store

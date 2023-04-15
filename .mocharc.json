@@ -1,6 +1,0 @@
-{
-  "require": ["source-map-support/register", "test/register.js"],
-  "watch-files": ["test/**/*.spec.ts"],
-  "reporter": "progress",
-  "timeout": "2000"
-}
