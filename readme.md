@@ -24,7 +24,7 @@
 - [x] Unit tests with mocha, chai & sinon
 - [x] Continuous integration with TravisCI
 - [x] Coverage reports with istanbul & Coveralls
-- [ ] Switch to JEST for unit tests
+- [x] Switch to JEST for unit tests
 - [ ] Dependency injection for the service layer
 - [ ] Containerized setup with docker-compose
 
