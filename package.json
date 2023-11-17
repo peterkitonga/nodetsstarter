@@ -10,7 +10,8 @@
     "test:reporter": "cat tests/coverage/lcov.info | coveralls",
     "test:view": "open-cli tests/coverage/lcov-report/index.html",
     "lint": "eslint src/**/*.ts",
-    "lint:format": "eslint src/**/*.ts --fix"
+    "lint:format": "eslint src/**/*.ts --fix",
+    "pm2": "pm2 start pm2.config.js --no-daemon"
   },
   "author": "Peter Kitonga",
   "license": "ISC",
