@@ -1,4 +1,4 @@
-FROM node:14.21.3-alpine
+FROM node:16.20.2-alpine
 
 WORKDIR /var/opt/app
 
@@ -8,6 +8,6 @@ RUN npm install
 
 COPY . /var/opt/app
 
-EXPOSE 8080
+EXPOSE 8180
 
 CMD [ "npm", "run", "serve" ]
