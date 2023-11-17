@@ -1,0 +1,6 @@
+.git/
+.idea/
+.vscode/
+.github/
+node_modules/
+README.md

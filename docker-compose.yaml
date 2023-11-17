@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  dev-server:
+    image: "ts-starter-app:latest"
+    build:
+      context: ./
+      dockerfile: tools/docker/app.Dockerfile
+    container_name: "ts-starter-app"
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./src:/var/opt/app/src
+      - ./storage:/var/opt/app/storage
+    depends_on:
+      - mongodb
+
+  deploy-server:
+    image: "ts-starter-nginx:latest"
+    build:
+      context: ./
+      dockerfile: tools/docker/nginx.Dockerfile
+    container_name: "ts-starter-nginx"
+    ports:
+      - "8180:80"
+    depends_on:
+      - pm2
+
+  pm2:
+    image: "ts-starter-pm2:latest"
+    build:
+      context: ./
+      dockerfile: tools/docker/pm2.Dockerfile
+    container_name: "ts-starter-pm2"
+    volumes:
+      - ./src:/var/opt/app/src
+      - ./storage:/var/opt/app/storage
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: "mongo:4.4.24"
+    container_name: "mongodb"
+    volumes:
+      - ./data:/data/db
+    env_file:
+      - ./.env
+
+  npm:
+    image: "node:16.20.2-alpine"
+    container_name: "npm-util"
+    working_dir: /var/opt/app
+    volumes:
+      - ./:/var/opt/app
+    stdin_open: true
+    tty: true
+    entrypoint: [ "npm" ]
+
+networks:
+  default:
+    name: "ts-starter"
