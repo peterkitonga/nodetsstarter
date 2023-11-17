@@ -26,7 +26,7 @@
 - [x] Coverage reports with istanbul & Coveralls
 - [x] Switch to JEST for unit tests
 - [ ] Dependency injection for the service layer
-- [ ] Containerized setup with docker-compose
+- [x] Containerized setup with docker-compose
 
 ## Folder structure
 
@@ -101,6 +101,12 @@ Start the development server
   npm run serve
 ```
 
+To run the development server with docker, run
+
+```bash
+  docker-compose up -d dev-server
+```
+
 ## Deployment
 
 Install dependencies first
@@ -115,6 +121,12 @@ To deploy this project in production, run
   npm run build
 ```
 
+To deploy this project in production with docker, run
+
+```bash
+  docker-compose up -d deploy-server
+```
+
 ## Running Tests
 
 Tests are written in Mocha, Chai under the `test` directory and uses `istanbul` for coverage reports. To run tests, run the following command
@@ -127,6 +139,12 @@ To run and view coverage reports for the tests, you will need to run two scripts
 
 ```bash
   npm run test:coverage ; npm run test:view
+```
+
+Tests can also be run with docker using the npm docker "utility" service provided. Run this with
+
+```bash
+  docker-compose run --rm npm test
 ```
 
 ## Linting
