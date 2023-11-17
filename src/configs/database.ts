@@ -9,7 +9,7 @@ export default {
     if (this.provider === 'atlas') {
       return `mongodb+srv://${this.username}:${this.password}@${this.host}/${this.name}?retryWrites=true&w=majority`;
     } else {
-      return `mongodb://${this.username}:${this.password}@${this.host}:${this.port}/${this.name}`;
+      return `mongodb://${this.username}:${this.password}@${this.host}:${this.port}/${this.name}?authSource=admin`;
     }
   },
 };
