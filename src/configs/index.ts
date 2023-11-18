@@ -1,11 +1,11 @@
 import path from 'path';
 import { accessSync } from 'fs';
 
-import app from './app';
-import mail from './mail';
-import logging from './logging';
-import database from './database';
-import filesystems from './filesystems';
+import app from '@src/configs/app';
+import mail from '@src/configs/mail';
+import logging from '@src/configs/logging';
+import database from '@src/configs/database';
+import filesystems from '@src/configs/filesystems';
 
 const envCheck = () => {
   try {

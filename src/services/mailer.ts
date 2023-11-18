@@ -1,32 +1,28 @@
-import configs from '../configs';
-import Mailer from '../loaders/nodemailer';
-import { ResultResponse } from '../common/interfaces/responses';
+import configs from '@src/configs';
+import Mailer from '@src/loaders/nodemailer';
+import { AppResponse } from '@src/shared/interfaces/responses';
 
 export default class MailerService {
-  private email: string;
-
-  public constructor(email: string) {
-    this.email = email;
+  public constructor(private email: string) {
+    //
   }
 
-  public async sendWelcomeEmail(code: string): Promise<ResultResponse<null>> {
+  public async sendWelcomeEmail(code: string): Promise<AppResponse<null>> {
     try {
-      const sendMail = await Mailer.send(
+      return await Mailer.send(
         this.email,
         `Welcome to ${configs.app.name}`,
         { message: 'Thank you for registering with us. Please click the link below to activate your account.', code },
         'welcome',
       );
-
-      return sendMail;
     } catch (err) {
       throw err;
     }
   }
 
-  public async sendResetPasswordEmail(token: string): Promise<ResultResponse<null>> {
+  public async sendResetPasswordEmail(token: string): Promise<AppResponse<null>> {
     try {
-      const sendMail = await Mailer.send(
+      return await Mailer.send(
         this.email,
         `${configs.app.name} reset password`,
         {
@@ -36,8 +32,6 @@ export default class MailerService {
         },
         'reset',
       );
-
-      return sendMail;
     } catch (err) {
       throw err;
     }

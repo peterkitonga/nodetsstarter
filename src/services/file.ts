@@ -1,17 +1,17 @@
 import crypto from 'crypto';
 import { unlink, symlink, writeFile } from 'fs/promises';
 
-import configs from '../configs';
-import { publicPath } from '../utils/path';
-import SThreeClient from '../loaders/aws-sthree';
-import { ResultResponse } from '../common/interfaces/responses';
+import configs from '@src/configs';
+import { publicPath } from '@src/utils/path';
+import SThreeClient from '@src/loaders/aws-sthree';
+import { AppResponse } from '@src/shared/interfaces/responses';
 
 export default class FileStorageService {
   public constructor() {
     //
   }
 
-  public async storeFile(base64String: string): Promise<ResultResponse<string>> {
+  public async storeFile(base64String: string): Promise<AppResponse<string>> {
     try {
       const storageProvider = configs.filesystems.provider;
 
@@ -30,7 +30,7 @@ export default class FileStorageService {
     }
   }
 
-  public async deleteFile(fileUrl: string): Promise<ResultResponse<string>> {
+  public async deleteFile(fileUrl: string): Promise<AppResponse<string>> {
     try {
       const storageProvider = configs.filesystems.provider;
 
@@ -41,8 +41,8 @@ export default class FileStorageService {
         return await this.deleteLocalFile(fileName);
       } else {
         const bucketName = configs.filesystems.providers.s3.bucket;
-        const bucketRegion = configs.filesystems.providers.s3.region;
-        const baseFileUrl = `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/`;
+        const bucketEndpoint = configs.filesystems.providers.s3.endpoint;
+        const baseFileUrl = `${bucketEndpoint}/${bucketName}/`;
         const fileName = fileUrl.substring(baseFileUrl.length, fileUrl.length);
 
         return await this.deleteCloudFile(fileName);
@@ -52,7 +52,7 @@ export default class FileStorageService {
     }
   }
 
-  private async storeLocalFile(fileName: string, base64File: string): Promise<ResultResponse<string>> {
+  private async storeLocalFile(fileName: string, base64File: string): Promise<AppResponse<string>> {
     try {
       const filePath = `${configs.filesystems.providers.local.dir}/${fileName}`;
 
@@ -68,7 +68,7 @@ export default class FileStorageService {
     }
   }
 
-  private async deleteLocalFile(fileName: string): Promise<ResultResponse<string>> {
+  private async deleteLocalFile(fileName: string): Promise<AppResponse<string>> {
     try {
       const filePath = `${configs.filesystems.providers.local.dir}/${fileName}`;
 
@@ -81,35 +81,34 @@ export default class FileStorageService {
     }
   }
 
-  private storeCloudFile(fileName: string, base64File: string, fileType: string): Promise<ResultResponse<string>> {
+  private async storeCloudFile(fileName: string, base64File: string, fileType: string): Promise<AppResponse<string>> {
     const bucketName = configs.filesystems.providers.s3.bucket;
-    const bucketRegion = configs.filesystems.providers.s3.region;
+    const bucketEndpoint = configs.filesystems.providers.s3.endpoint;
 
-    return SThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'))
-      .then(() => {
-        return Promise.resolve({
-          status: 'success',
-          data: `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/${fileName}`,
-        });
-      })
-      .catch((err) => {
-        return Promise.reject({ status: 'error', message: err.message });
-      });
+    try {
+      await SThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'));
+
+      return {
+        status: 'success',
+        data: `${bucketEndpoint}/${bucketName}/${fileName}`,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 
-  private deleteCloudFile(fileName: string): Promise<ResultResponse<string>> {
+  private async deleteCloudFile(fileName: string): Promise<AppResponse<string>> {
     const bucketName = configs.filesystems.providers.s3.bucket;
-    const bucketRegion = configs.filesystems.providers.s3.region;
+    const bucketEndpoint = configs.filesystems.providers.s3.endpoint;
 
-    return SThreeClient.deleteFromBucket(fileName)
-      .then(() => {
-        return Promise.resolve({
-          status: 'success',
-          data: `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/${fileName}`,
-        });
-      })
-      .catch((err) => {
-        return Promise.reject({ status: 'error', message: err.message });
-      });
+    try {
+      await SThreeClient.deleteFromBucket(fileName);
+      return {
+        status: 'success',
+        data: `${bucketEndpoint}/${bucketName}/${fileName}`,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }

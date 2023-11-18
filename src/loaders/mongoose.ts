@@ -1,14 +1,14 @@
 import { connect, connection } from 'mongoose';
 
-import configs from '../configs';
-import { ResultResponse } from '../common/interfaces/responses';
+import configs from '@src/configs';
+import { AppResponse } from '@src/shared/interfaces/responses';
 
 class MongooseConnect {
   public constructor() {
     // constructor
   }
 
-  public connect(): Promise<ResultResponse<null>> {
+  public connect(): Promise<AppResponse<null>> {
     return new Promise((resolve, reject) => {
       connect(configs.database.uri(), { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
         .then(() => resolve({ status: 'success', message: 'MONGO CONNECTED!' }))
@@ -16,7 +16,7 @@ class MongooseConnect {
     });
   }
 
-  public disconnect(): Promise<ResultResponse<null>> {
+  public disconnect(): Promise<AppResponse<null>> {
     return new Promise((resolve, reject) => {
       connection
         .close(false)

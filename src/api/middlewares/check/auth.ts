@@ -1,10 +1,9 @@
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
-import configs from '../../../configs';
-import Salt from '../../../models/salt';
-import { HttpStatusCodes } from '../../../common/enums/http';
-import UnauthorizedError from '../../../common/errors/unauthorized';
+import configs from '@src/configs';
+import Salt from '@src/models/salt';
+import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 class AuthCheck {
   public constructor() {
@@ -13,10 +12,9 @@ class AuthCheck {
 
   public async verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const hasAuthHeader = req.get('Authorization');
+      const authHeader = req.get('Authorization');
 
-      if (hasAuthHeader) {
-        const authHeader = hasAuthHeader;
+      if (authHeader) {
         const token = authHeader.split(' ')[1];
 
         const isDecodedToken = jwt.verify(token, configs.app.auth.jwt.secret);
