@@ -20,6 +20,3 @@ tests/coverage
 
 # Miscellaneous
 .DS_Store
-
-# Database
-data

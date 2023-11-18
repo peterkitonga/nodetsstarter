@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { SaltModel } from '../common/interfaces/database';
+import { SaltModel } from '@src/shared/interfaces/database';
 
 const schema = new Schema<SaltModel>(
   {

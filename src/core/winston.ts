@@ -1,7 +1,7 @@
 import { createLogger, format, Logger, transports } from 'winston';
 
-import configs from '../configs';
-import { storagePath } from '../utils/path';
+import configs from '@src/configs';
+import { storagePath } from '@src/utils/path';
 
 class WinstonLogger {
   private logger: Logger;

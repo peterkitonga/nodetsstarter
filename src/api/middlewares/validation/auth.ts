@@ -1,9 +1,9 @@
 import joi, { CustomHelpers } from 'joi';
 import { Request, Response, NextFunction } from 'express';
-import Autobind from '../../../common/decorators/autobind';
+import Autobind from '@src/shared/decorators/autobind';
 
-import ValidationError from '../../../common/errors/validation';
-import { AuthRequest, FileRequest, ResetPasswordRequest } from '../../../common/interfaces/requests';
+import ValidationError from '@src/shared/errors/validation';
+import { AuthRequest, FileRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
 
 class AuthValidator {
   public constructor() {

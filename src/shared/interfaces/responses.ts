@@ -1,6 +1,6 @@
 import { UserModel } from './database';
 
-export interface ResultResponse<DataType> {
+export interface AppResponse<DataType> {
   status: string; // possible values: success, error, warning, info
   message?: string;
   data?: DataType;

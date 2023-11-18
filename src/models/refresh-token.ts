@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { RefreshTokenModel } from '../common/interfaces/database';
+import { RefreshTokenModel } from '@src/shared/interfaces/database';
 
 const schema = new Schema<RefreshTokenModel>(
   {

@@ -1,11 +1,11 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
-import configs from '../configs';
-import { ResultResponse } from '../common/interfaces/responses';
+import configs from '@src/configs';
+import { AppResponse } from '@src/shared/interfaces/responses';
 
 class SThreeClient {
   private client: S3Client;
-  private bucketName: string;
+  private readonly bucketName: string;
 
   public constructor() {
     this.client = new S3Client({
@@ -14,11 +14,12 @@ class SThreeClient {
         accessKeyId: configs.filesystems.providers.s3.key!,
         secretAccessKey: configs.filesystems.providers.s3.secret!,
       },
+      endpoint: configs.filesystems.providers.s3.endpoint,
     });
     this.bucketName = configs.filesystems.providers.s3.bucket!;
   }
 
-  public async saveToBucket(fileName: string, fileType: string, fileContent: Buffer): Promise<ResultResponse<null>> {
+  public async saveToBucket(fileName: string, fileType: string, fileContent: Buffer): Promise<AppResponse<null>> {
     try {
       const allUsers = 'uri=http://acs.amazonaws.com/groups/global/AllUsers';
       const authUsers = 'uri=http://acs.amazonaws.com/groups/global/AuthenticatedUsers';
@@ -43,7 +44,7 @@ class SThreeClient {
     }
   }
 
-  public async deleteFromBucket(fileName: string): Promise<ResultResponse<null>> {
+  public async deleteFromBucket(fileName: string): Promise<AppResponse<null>> {
     try {
       await this.client.send(
         new DeleteObjectCommand({

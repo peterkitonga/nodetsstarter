@@ -30,6 +30,7 @@
 
 ## Folder structure
 
+    |-- data/                     # Database files for the mongo docker container
     |-- public/                   # Static assets & symlinks for locally stored files
     |-- src/
     |   |-- @types/               # Configurations for declaration merging
@@ -37,20 +38,23 @@
     |   |   |-- controllers/      # All REST API router functions
     |   |   |-- middlewares/      # Interceptor filters before router functions
     |   |   |-- routes/           # Routes for the REST API
-    |   |-- common/               
+    |   |-- configs/              # Configurations retrieved from env variables
+    |   |-- core/                 # Core modules split for easier startup of the application
+    |   |-- models/               # Mongoose models as data access layer
+    |   |-- services/             # Main business logic code as service layer
+    |   |-- shared/               
     |   |   |-- abstracts/        # Custom abstract classes
     |   |   |-- decorators/       # Custom decorators
     |   |   |-- enums/            # Custom enum types
     |   |   |-- errors/           # Custom error classes with HTTP status codes
     |   |   |-- interfaces/       # Custom interface types
-    |   |-- configs/              # Configurations retrieved from env variables
-    |   |-- loaders/              # Modules split for easier startup of application
-    |   |-- models/               # Mongoose models as data access layer
-    |   |-- services/             # Main business logic code as service layer
     |   |-- utils/                # Local utility functions for application
     |   |-- app.ts                # Application main file
     |-- storage/                  # Local storage for cache, files and logs
-    |-- test/                     # Specs for unit tests
+    |-- tests/                    # Specs for unit tests
+    |-- tools/                    
+    |   |-- docker/               # Dockerfiles for custom images
+    |   |-- nginx/                # Configuration files for the nginx reverse proxy
     |-- views/                    # Templates for emails & pdf files(e.g. invoices)
     |-- .env.example              # Local environment config sample
     

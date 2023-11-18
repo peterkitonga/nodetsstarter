@@ -2,25 +2,25 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
-import configs from '../configs';
-import User from '../models/user';
-import Salt from '../models/salt';
-import RefreshToken from '../models/refresh-token';
-import PasswordReset from '../models/password-reset';
-import { ResultResponse, TokenResponse } from '../common/interfaces/responses';
-import { AuthRequest, ResetPasswordRequest } from '../common/interfaces/requests';
-import { UserModel, PasswordResetModel, RefreshTokenModel, SaltModel } from '../common/interfaces/database';
+import configs from '@src/configs';
+import User from '@src/models/user';
+import Salt from '@src/models/salt';
+import RefreshToken from '@src/models/refresh-token';
+import PasswordReset from '@src/models/password-reset';
+import { AppResponse, TokenResponse } from '@src/shared/interfaces/responses';
+import { AuthRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
+import { UserModel, PasswordResetModel, RefreshTokenModel, SaltModel } from '@src/shared/interfaces/database';
 
-import NotFoundError from '../common/errors/not-found';
-import ForbiddenError from '../common/errors/forbidden';
-import UnauthorizedError from '../common/errors/unauthorized';
+import NotFoundError from '@src/shared/errors/not-found';
+import ForbiddenError from '@src/shared/errors/forbidden';
+import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 export default class AuthService {
   public constructor() {
     //
   }
 
-  public async registerUser({ name, email, password }: AuthRequest): Promise<ResultResponse<SaltModel>> {
+  public async registerUser({ name, email, password }: AuthRequest): Promise<AppResponse<SaltModel>> {
     try {
       const isRegistered = await User.exists({ email });
 
@@ -43,7 +43,7 @@ export default class AuthService {
     }
   }
 
-  public async authenticateUser({ email, password, remember_me }: AuthRequest): Promise<ResultResponse<TokenResponse>> {
+  public async authenticateUser({ email, password, remember_me }: AuthRequest): Promise<AppResponse<TokenResponse>> {
     try {
       const user = await User.findOne({ email });
 
@@ -53,7 +53,7 @@ export default class AuthService {
 
           if (isMatched) {
             const { name, avatar, is_activated, created_at } = user;
-            let generatedTokens: ResultResponse<Partial<TokenResponse>>;
+            let generatedTokens: AppResponse<Partial<TokenResponse>>;
 
             if (remember_me) {
               generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 720 });
@@ -90,7 +90,7 @@ export default class AuthService {
     }
   }
 
-  public async activateUser(code: string): Promise<ResultResponse<Partial<UserModel>>> {
+  public async activateUser(code: string): Promise<AppResponse<Partial<UserModel>>> {
     try {
       const isValidCode = await Salt.findOne({ salt: code });
 
@@ -123,7 +123,7 @@ export default class AuthService {
     }
   }
 
-  public async createResetToken(email: string): Promise<ResultResponse<Partial<PasswordResetModel>>> {
+  public async createResetToken(email: string): Promise<AppResponse<Partial<PasswordResetModel>>> {
     try {
       const isRegistered = await User.exists({ email });
 
@@ -144,7 +144,7 @@ export default class AuthService {
   public async resetPassword({
     token,
     password,
-  }: ResetPasswordRequest): Promise<ResultResponse<Partial<PasswordResetModel>>> {
+  }: ResetPasswordRequest): Promise<AppResponse<Partial<PasswordResetModel>>> {
     try {
       const isValidToken = await PasswordReset.findOne({ token });
 
@@ -169,7 +169,7 @@ export default class AuthService {
     }
   }
 
-  public async refreshToken(encryptedToken: string): Promise<ResultResponse<Partial<TokenResponse>>> {
+  public async refreshToken(encryptedToken: string): Promise<AppResponse<Partial<TokenResponse>>> {
     try {
       const isDecodedToken = jwt.verify(encryptedToken, configs.app.auth.jwt.secret);
 
@@ -210,7 +210,7 @@ export default class AuthService {
     }
   }
 
-  public async getUser(userId: string): Promise<ResultResponse<Partial<UserModel>>> {
+  public async getUser(userId: string): Promise<AppResponse<Partial<UserModel>>> {
     try {
       const user = await User.findById(userId);
       const { name, email, avatar, is_activated, created_at } = user!;
@@ -224,7 +224,7 @@ export default class AuthService {
     }
   }
 
-  public async updateUser(userId: string, { name, email }: AuthRequest): Promise<ResultResponse<Partial<UserModel>>> {
+  public async updateUser(userId: string, { name, email }: AuthRequest): Promise<AppResponse<Partial<UserModel>>> {
     try {
       const user = await User.findById(userId);
       user!.name = name!;
@@ -249,7 +249,7 @@ export default class AuthService {
   public async updateAvatar({
     user_id,
     url,
-  }: Record<'user_id' | 'url', string>): Promise<ResultResponse<Partial<UserModel>>> {
+  }: Record<'user_id' | 'url', string>): Promise<AppResponse<Partial<UserModel>>> {
     try {
       const user = await User.findById(user_id);
       user!.avatar = url;
@@ -268,7 +268,7 @@ export default class AuthService {
   public async updatePassword({
     user_id,
     password,
-  }: Record<'user_id' | 'password', string>): Promise<ResultResponse<null>> {
+  }: Record<'user_id' | 'password', string>): Promise<AppResponse<null>> {
     try {
       const hashedPassword = await bcrypt.hash(password!, 12);
 
@@ -285,7 +285,7 @@ export default class AuthService {
     }
   }
 
-  public async logoutUser({ salt, token }: Record<'salt' | 'token', string>): Promise<ResultResponse<null>> {
+  public async logoutUser({ salt, token }: Record<'salt' | 'token', string>): Promise<AppResponse<null>> {
     try {
       const decode = jwt.decode(token);
       const decodedToken = <{ token: string }>decode;
@@ -305,7 +305,7 @@ export default class AuthService {
   }: {
     user_id: string;
     duration: number;
-  }): Promise<ResultResponse<RefreshTokenModel>> {
+  }): Promise<AppResponse<RefreshTokenModel>> {
     try {
       const additionalTime = 3600 * duration * 1000;
 
@@ -327,7 +327,7 @@ export default class AuthService {
   }: {
     user_id: string;
     duration: number;
-  }): Promise<ResultResponse<Partial<TokenResponse>>> {
+  }): Promise<AppResponse<Partial<TokenResponse>>> {
     try {
       const buffer = crypto.randomBytes(64);
       const salt = buffer.toString('hex');

@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { PasswordResetModel } from '../common/interfaces/database';
+import { PasswordResetModel } from '@src/shared/interfaces/database';
 
 const schema = new Schema<PasswordResetModel>(
   {

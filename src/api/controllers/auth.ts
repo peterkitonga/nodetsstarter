@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 
-import configs from '../../configs';
-import AuthService from '../../services/auth';
-import MailerService from '../../services/mailer';
-import FileStorageService from '../../services/file';
-import Autobind from '../../common/decorators/autobind';
-import { HttpStatusCodes } from '../../common/enums/http';
-import { UserModel } from '../../common/interfaces/database';
-import { ResultResponse, TokenResponse } from '../../common/interfaces/responses';
-import { AuthRequest, ActivationRequest, ResetPasswordRequest, FileRequest } from '../../common/interfaces/requests';
+import configs from '@src/configs';
+import AuthService from '@src/services/auth';
+import MailerService from '@src/services/mailer';
+import FileStorageService from '@src/services/file';
+import Autobind from '@src/shared/decorators/autobind';
+import { HttpStatusCodes } from '@src/shared/enums/http';
+import { UserModel } from '@src/shared/interfaces/database';
+import { AppResponse, TokenResponse } from '@src/shared/interfaces/responses';
+import { AuthRequest, ActivationRequest, ResetPasswordRequest, FileRequest } from '@src/shared/interfaces/requests';
 
-import ForbiddenError from '../../common/errors/forbidden';
-import UnauthorizedError from '../../common/errors/unauthorized';
+import ForbiddenError from '@src/shared/errors/forbidden';
+import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 class AuthController {
   private authService: AuthService;
@@ -25,7 +25,7 @@ class AuthController {
   @Autobind
   public async registerUser(
     req: Request<unknown, unknown, AuthRequest>,
-    res: Response<ResultResponse<null>>,
+    res: Response<AppResponse<null>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -46,7 +46,7 @@ class AuthController {
   @Autobind
   public async authenticateUser(
     req: Request<unknown, unknown, AuthRequest>,
-    res: Response<ResultResponse<Partial<TokenResponse>>>,
+    res: Response<AppResponse<Partial<TokenResponse>>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -74,7 +74,7 @@ class AuthController {
   @Autobind
   public async activateUser(
     req: Request<ActivationRequest>,
-    res: Response<ResultResponse<null>>,
+    res: Response<AppResponse<null>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -92,7 +92,7 @@ class AuthController {
   @Autobind
   public async sendResetLink(
     req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response<ResultResponse<null>>,
+    res: Response<AppResponse<null>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -112,7 +112,7 @@ class AuthController {
   @Autobind
   public async resetPassword(
     req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response<ResultResponse<null>>,
+    res: Response<AppResponse<null>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -131,7 +131,7 @@ class AuthController {
   @Autobind
   public async refreshToken(
     req: Request,
-    res: Response<ResultResponse<Partial<TokenResponse>>>,
+    res: Response<AppResponse<Partial<TokenResponse>>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -157,7 +157,7 @@ class AuthController {
   @Autobind
   public async getUser(
     req: Request,
-    res: Response<ResultResponse<Partial<UserModel>>>,
+    res: Response<AppResponse<Partial<UserModel>>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -172,7 +172,7 @@ class AuthController {
   @Autobind
   public async updateUser(
     req: Request<unknown, unknown, AuthRequest>,
-    res: Response<ResultResponse<Partial<UserModel>>>,
+    res: Response<AppResponse<Partial<UserModel>>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -188,7 +188,7 @@ class AuthController {
   @Autobind
   public async updateAvatar(
     req: Request<unknown, unknown, FileRequest>,
-    res: Response<ResultResponse<Partial<UserModel>>>,
+    res: Response<AppResponse<Partial<UserModel>>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -211,7 +211,7 @@ class AuthController {
   @Autobind
   public async updatePassword(
     req: Request<unknown, unknown, AuthRequest>,
-    res: Response<ResultResponse<null>>,
+    res: Response<AppResponse<null>>,
     next: NextFunction,
   ): Promise<void> {
     try {
@@ -225,7 +225,7 @@ class AuthController {
   }
 
   @Autobind
-  public async logoutUser(req: Request, res: Response<ResultResponse<null>>, next: NextFunction): Promise<void> {
+  public async logoutUser(req: Request, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       if (req.cookies && req.cookies.refresh_token) {
         const logoutUser = await this.authService.logoutUser({ salt: req.salt!, token: req.cookies.refresh_token });

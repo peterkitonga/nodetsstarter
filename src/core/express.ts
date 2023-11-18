@@ -4,6 +4,7 @@ import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import { Server } from 'http';
 import cookieParser from 'cookie-parser';
 import dotenvExpand from 'dotenv-expand';
 import express, { Request, Response, NextFunction, Application, json } from 'express';
@@ -12,23 +13,23 @@ import express, { Request, Response, NextFunction, Application, json } from 'exp
 dotenvExpand(dotenv.config({ path: path.join(__dirname, '../../.env') }));
 /* ======================= OTHER MODULES GO BELOW ======================= */
 
-import { Server } from 'http';
-import configs from '../configs';
-import routes from '../api/routes';
-import WinstonLogger from './winston';
-import MongooseConnect from './mongoose';
-import { publicPath } from '../utils/path';
-import BaseError from '../common/errors/base';
-import { HttpStatusCodes } from '../common/enums/http';
+import configs from '@src/configs';
+import routes from '@src/api/routes';
+import { publicPath } from '@src/utils/path';
+import BaseError from '@src/shared/errors/base';
+import WinstonLogger from '@src/core/winston';
+import MongooseConnect from '@src/core/mongoose';
+import { HttpStatusCodes } from '@src/shared/enums';
 
 class ExpressApp {
+  private server?: Server;
   private app: Application = express();
 
   public constructor() {
     //
   }
 
-  public async init(): Promise<void> {
+  public init(): void {
     this.setupBodyParser();
     this.serveStaticFiles();
 
@@ -41,8 +42,35 @@ class ExpressApp {
     this.handleNonExistingRoute();
     this.handleErrorMiddleware();
 
-    await this.connectDatabase();
-    this.listen();
+    this.connectDatabase();
+  }
+
+  public connectDatabase(): void {
+    MongooseConnect.connect()
+      .then((res) => {
+        WinstonLogger.info(res.message!);
+        this.listen();
+      })
+      .catch((err: Error) => {
+        WinstonLogger.error(`MONGO ERROR! ${err.message}`);
+        this.gracefulShutdown(this.server!);
+      });
+  }
+
+  public listen(): void {
+    this.server = this.app.listen(configs.app.port);
+
+    WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
+
+    process.on('SIGTERM', () => {
+      WinstonLogger.info('Starting graceful shutdown of server...');
+      this.gracefulShutdown(this.server!);
+    });
+
+    process.on('SIGINT', () => {
+      WinstonLogger.info('Exiting server process cleanly...');
+      this.gracefulShutdown(this.server!);
+    });
   }
 
   public gracefulShutdown(server: Server) {
@@ -53,34 +81,6 @@ class ExpressApp {
         .then((res) => WinstonLogger.info(res.message!))
         .catch((err: Error) => WinstonLogger.error(err.message));
     });
-  }
-
-  public listen(): void {
-    const server = this.app.listen(configs.app.port);
-
-    WinstonLogger.info(`Listening on: ${configs.app.base}, PID: ${process.pid}`);
-
-    process.on('SIGTERM', () => {
-      WinstonLogger.info('Starting graceful shutdown of server...');
-      this.gracefulShutdown(server);
-    });
-
-    process.on('SIGINT', () => {
-      WinstonLogger.info('Exiting server process cleanly...');
-      this.gracefulShutdown(server);
-    });
-  }
-
-  public async connectDatabase(): Promise<void> {
-    try {
-      const { message } = await MongooseConnect.connect();
-
-      WinstonLogger.info(message!);
-    } catch (err) {
-      const error = err as Error;
-
-      WinstonLogger.error(error.message);
-    }
   }
 
   public serveStaticFiles(): void {

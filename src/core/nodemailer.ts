@@ -2,9 +2,9 @@ import ejs from 'ejs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { createTransport, SendMailOptions, Transporter } from 'nodemailer';
 
-import configs from '../configs';
-import { viewPath } from '../utils/path';
-import { ResultResponse } from '../common/interfaces/responses';
+import configs from '@src/configs';
+import { viewPath } from '@src/utils/path';
+import { AppResponse } from '@src/shared/interfaces/responses';
 
 class Mailer {
   private transporter: Transporter;
@@ -27,33 +27,30 @@ class Mailer {
     });
   }
 
-  public send(
+  public async send(
     receiver: string,
     subject: string,
     messageOptions: ejs.Data,
     view: string,
-  ): Promise<ResultResponse<null>> {
+  ): Promise<AppResponse<null>> {
     // send mail with defined transport object
-    return this.getViewData(view, messageOptions)
-      .then((viewResponse) => {
-        const mailOptions: SendMailOptions = {
-          from: `"${configs.mail.from.name}" ${configs.mail.from.address}`, // sender address (who sends)
-          to: receiver, // list of receivers (who receives)
-          subject: subject, // subject line
-          html: viewResponse.data, // html body
-        };
+    try {
+      const viewResponse = await this.getViewData(view, messageOptions);
+      const mailOptions: SendMailOptions = {
+        from: `"${configs.mail.from.name}" ${configs.mail.from.address}`,
+        to: receiver,
+        subject: subject,
+        html: viewResponse.data, // html body
+      };
+      const mailResponse = await this.transporter.sendMail(mailOptions);
 
-        return this.transporter.sendMail(mailOptions);
-      })
-      .then((mailResponse) => {
-        return Promise.resolve({ status: 'success', message: mailResponse.response });
-      })
-      .catch((err) => {
-        return Promise.reject({ status: 'error', message: err.message });
-      });
+      return { status: 'success', message: mailResponse.response };
+    } catch (err) {
+      throw err;
+    }
   }
 
-  private getViewData(view: string, dataOptions: ejs.Data): Promise<ResultResponse<string>> {
+  private getViewData(view: string, dataOptions: ejs.Data): Promise<AppResponse<string>> {
     return new Promise((resolve, reject) => {
       /**
        * Using ejs template for mail views
