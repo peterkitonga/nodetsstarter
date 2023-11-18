@@ -37,16 +37,16 @@
     |   |   |-- controllers/      # All REST API router functions
     |   |   |-- middlewares/      # Interceptor filters before router functions
     |   |   |-- routes/           # Routes for the REST API
-    |   |-- common/               
+    |   |-- configs/              # Configurations retrieved from env variables
+    |   |-- loaders/              # Modules split for easier startup of application
+    |   |-- models/               # Mongoose models as data access layer
+    |   |-- services/             # Main business logic code as service layer
+    |   |-- shared/               
     |   |   |-- abstracts/        # Custom abstract classes
     |   |   |-- decorators/       # Custom decorators
     |   |   |-- enums/            # Custom enum types
     |   |   |-- errors/           # Custom error classes with HTTP status codes
     |   |   |-- interfaces/       # Custom interface types
-    |   |-- configs/              # Configurations retrieved from env variables
-    |   |-- loaders/              # Modules split for easier startup of application
-    |   |-- models/               # Mongoose models as data access layer
-    |   |-- services/             # Main business logic code as service layer
     |   |-- utils/                # Local utility functions for application
     |   |-- app.ts                # Application main file
     |-- storage/                  # Local storage for cache, files and logs
