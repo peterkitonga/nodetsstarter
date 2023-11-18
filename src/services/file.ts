@@ -3,7 +3,7 @@ import { unlink, symlink, writeFile } from 'fs/promises';
 
 import configs from '@src/configs';
 import { publicPath } from '@src/utils/path';
-import SThreeClient from '@src/loaders/aws-sthree';
+import SThreeClient from '@src/core/aws-sthree';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
 export default class FileStorageService {

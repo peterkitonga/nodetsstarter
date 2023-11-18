@@ -1,3 +1,3 @@
-import ExpressApp from '@src/loaders/express';
+import ExpressApp from '@src/core/express';
 
 ExpressApp.init();

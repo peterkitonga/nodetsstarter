@@ -17,8 +17,8 @@ import configs from '@src/configs';
 import routes from '@src/api/routes';
 import { publicPath } from '@src/utils/path';
 import BaseError from '@src/shared/errors/base';
-import WinstonLogger from '@src/loaders/winston';
-import MongooseConnect from '@src/loaders/mongoose';
+import WinstonLogger from '@src/core/winston';
+import MongooseConnect from '@src/core/mongoose';
 import { HttpStatusCodes } from '@src/shared/enums';
 
 class ExpressApp {

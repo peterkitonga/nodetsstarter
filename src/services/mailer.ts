@@ -1,5 +1,5 @@
 import configs from '@src/configs';
-import Mailer from '@src/loaders/nodemailer';
+import Mailer from '@src/core/nodemailer';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
 export default class MailerService {
