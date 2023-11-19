@@ -32,6 +32,7 @@
     "mongoose": "^5.12.14",
     "nodemailer": "^6.6.2",
     "reflect-metadata": "^0.1.13",
+    "typedi": "^0.10.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {
