@@ -8,21 +8,28 @@ class MongooseConnect {
     // constructor
   }
 
-  public connect(): Promise<AppResponse<null>> {
-    return new Promise((resolve, reject) => {
-      connect(configs.database.uri(), { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
-        .then(() => resolve({ status: 'success', message: 'MONGO CONNECTED!' }))
-        .catch((err) => reject({ status: 'error', message: err.message }));
-    });
+  public async connect(): Promise<AppResponse<null>> {
+    try {
+      await connect(configs.database.uri(), {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useFindAndModify: false,
+      });
+
+      return { status: 'success', message: 'MONGO CONNECTED!' };
+    } catch (err) {
+      throw err;
+    }
   }
 
-  public disconnect(): Promise<AppResponse<null>> {
-    return new Promise((resolve, reject) => {
-      connection
-        .close(false)
-        .then(() => resolve({ status: 'success', message: 'MONGO DISCONNECTED!' }))
-        .catch((err) => reject({ status: 'error', message: err.message }));
-    });
+  public async disconnect(): Promise<AppResponse<null>> {
+    try {
+      await connection.close(false);
+
+      return { status: 'success', message: 'MONGO DISCONNECTED!' };
+    } catch (err) {
+      throw err;
+    }
   }
 }
 

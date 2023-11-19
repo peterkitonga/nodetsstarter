@@ -50,21 +50,19 @@ class Mailer {
     }
   }
 
-  private getViewData(view: string, dataOptions: ejs.Data): Promise<AppResponse<string>> {
-    return new Promise((resolve, reject) => {
+  private async getViewData(view: string, dataOptions: ejs.Data): Promise<AppResponse<string>> {
+    try {
       /**
        * Using ejs template for mail views
        *
        * @link https://stackoverflow.com/questions/41304922/sending-ejs-template-using-nodemailer#answer-41337102
        */
-      ejs.renderFile(viewPath(`emails/${view}.ejs`), dataOptions, (fileErr, data) => {
-        if (fileErr) {
-          reject({ status: 'error', message: fileErr.message });
-        } else {
-          resolve({ status: 'success', data: data });
-        }
-      });
-    });
+      const data = await ejs.renderFile(viewPath(`emails/${view}.ejs`), dataOptions);
+
+      return { status: 'success', data };
+    } catch (err) {
+      throw err;
+    }
   }
 }
 

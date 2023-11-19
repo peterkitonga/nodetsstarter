@@ -6,8 +6,8 @@ export interface UserModel extends Document {
   email: string;
   password: string;
   avatar?: string;
-  is_activated?: boolean;
-  created_at?: string;
+  isActivated?: boolean;
+  createdAt?: string;
 }
 
 export interface SaltModel extends Document {

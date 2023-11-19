@@ -53,7 +53,7 @@ class ExpressApp {
       })
       .catch((err: Error) => {
         WinstonLogger.error(`MONGO ERROR! ${err.message}`);
-        this.gracefulShutdown(this.server!);
+        this.gracefulShutdown();
       });
   }
 
@@ -64,22 +64,12 @@ class ExpressApp {
 
     process.on('SIGTERM', () => {
       WinstonLogger.info('Starting graceful shutdown of server...');
-      this.gracefulShutdown(this.server!);
+      this.gracefulShutdown();
     });
 
     process.on('SIGINT', () => {
       WinstonLogger.info('Exiting server process cleanly...');
-      this.gracefulShutdown(this.server!);
-    });
-  }
-
-  public gracefulShutdown(server: Server) {
-    return server.close(() => {
-      WinstonLogger.info('Server shutdown successfully!');
-
-      MongooseConnect.disconnect()
-        .then((res) => WinstonLogger.info(res.message!))
-        .catch((err: Error) => WinstonLogger.error(err.message));
+      this.gracefulShutdown();
     });
   }
 
@@ -137,6 +127,16 @@ class ExpressApp {
       }
 
       res.status(assignedStatusCode).json({ status: 'error', message, data });
+    });
+  }
+
+  private gracefulShutdown(): Server {
+    return this.server!.close(() => {
+      WinstonLogger.info('Server shutdown successfully!');
+
+      MongooseConnect.disconnect()
+        .then((res) => WinstonLogger.info(res.message!))
+        .catch((err: Error) => WinstonLogger.error(err.message));
     });
   }
 }
