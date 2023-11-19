@@ -30,7 +30,7 @@ export default class AuthService {
         const buffer = crypto.randomBytes(64);
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        const newUser = new User({ name, email, password: hashedPassword, is_activated: false });
+        const newUser = new User({ name, email, password: hashedPassword, isActivated: false });
         await newUser.save();
 
         const newSalt = new Salt({ salt: buffer.toString('hex'), user: newUser._id });
@@ -48,11 +48,11 @@ export default class AuthService {
       const user = await User.findOne({ email });
 
       if (user) {
-        if (user.is_activated) {
+        if (user.isActivated) {
           const isMatched = await bcrypt.compare(password, user.password);
 
           if (isMatched) {
-            const { name, avatar, is_activated, created_at } = user;
+            const { name, avatar, isActivated, createdAt } = user;
             let generatedTokens: AppResponse<Partial<TokenResponse>>;
 
             if (remember_me) {
@@ -71,8 +71,8 @@ export default class AuthService {
                   name,
                   email,
                   avatar: avatar || '',
-                  is_activated,
-                  created_at,
+                  isActivated: isActivated,
+                  createdAt: createdAt,
                 },
               },
             };
@@ -98,11 +98,11 @@ export default class AuthService {
         const currentSalt = isValidCode;
         const user = await User.findById(currentSalt.user);
 
-        if (user!.is_activated) {
+        if (user!.isActivated) {
           throw new ForbiddenError(`User account with activation code '${code}' is already activated.`);
         } else {
-          user!.is_activated = true;
-          const { name, email, is_activated } = await user!.save();
+          user!.isActivated = true;
+          const { name, email, isActivated } = await user!.save();
 
           await Salt.deleteOne({ salt: currentSalt.salt });
 
@@ -111,7 +111,7 @@ export default class AuthService {
             data: {
               name,
               email,
-              is_activated,
+              isActivated: isActivated,
             },
           };
         }
@@ -213,11 +213,11 @@ export default class AuthService {
   public async getUser(userId: string): Promise<AppResponse<Partial<UserModel>>> {
     try {
       const user = await User.findById(userId);
-      const { name, email, avatar, is_activated, created_at } = user!;
+      const { name, email, avatar, isActivated, createdAt } = user!;
 
       return {
         status: 'success',
-        data: { name, email, avatar, is_activated, created_at },
+        data: { name, email, avatar, isActivated: isActivated, createdAt: createdAt },
       };
     } catch (err) {
       throw err;
@@ -237,8 +237,8 @@ export default class AuthService {
           name: result.name,
           email: result.email,
           avatar: result.avatar,
-          is_activated: result.is_activated,
-          created_at: result.created_at,
+          isActivated: result.isActivated,
+          createdAt: result.createdAt,
         },
       };
     } catch (err) {
@@ -254,11 +254,11 @@ export default class AuthService {
       const user = await User.findById(user_id);
       user!.avatar = url;
       const result = await user!.save();
-      const { name, email, avatar, is_activated, created_at } = result;
+      const { name, email, avatar, isActivated, createdAt } = result;
 
       return {
         status: 'success',
-        data: { name, email, avatar, is_activated, created_at },
+        data: { name, email, avatar, isActivated: isActivated, createdAt: createdAt },
       };
     } catch (err) {
       throw err;

@@ -7,10 +7,10 @@ const schema = new Schema<UserModel>(
     email: { type: String, required: true },
     password: { type: String, required: true },
     avatar: String,
-    is_activated: Boolean,
+    isActivated: Boolean,
   },
   {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
   },
 );
 
