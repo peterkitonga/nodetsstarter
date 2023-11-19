@@ -1,12 +1,14 @@
-import { UserModel } from '@src/shared/interfaces/database';
 import { Service } from 'typedi';
+
 import User from '@src/models/user';
+import NotFoundError from '@src/shared/errors/not-found';
+import { UserModel } from '@src/shared/interfaces/database';
 
 @Service()
 export default class UserRepository implements BaseRepository<UserModel> {
-  public async create(item: UserModel): Promise<boolean> {
+  public async create(doc: UserModel): Promise<boolean> {
     try {
-      const newUser = new User(item);
+      const newUser = new User(doc);
       await newUser.save();
 
       return true;
@@ -15,12 +17,47 @@ export default class UserRepository implements BaseRepository<UserModel> {
     }
   }
 
-  public async update(identifier: string, item: UserModel): Promise<boolean> {
-    return Promise.resolve(false);
+  public async update(field: string, value: string, doc: UserModel): Promise<UserModel> {
+    try {
+      let user: UserModel | null;
+
+      if (field === '_id') {
+        user = await this.findById(value);
+      } else {
+        const filter = {} as { [key: string]: string };
+        filter[field] = value;
+
+        user = await User.findOne(filter);
+      }
+
+      if (!user) {
+        throw new NotFoundError(`User with ${field} ${value} not found.`);
+      }
+
+      for (const key in doc) {
+        // @ts-ignore
+        user[key] = doc[key];
+      }
+
+      await user.save();
+
+      return user;
+    } catch (err) {
+      throw err;
+    }
   }
 
-  public async delete(identifier: string): Promise<boolean> {
-    return Promise.resolve(false);
+  public async delete(field: string, value: string): Promise<boolean> {
+    try {
+      const filter = {} as { [key: string]: string };
+      filter[field] = value;
+
+      await User.deleteOne(filter);
+
+      return true;
+    } catch (err) {
+      throw err;
+    }
   }
 
   public async findByEmail(email: string): Promise<UserModel | null> {
