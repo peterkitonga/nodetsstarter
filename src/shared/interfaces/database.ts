@@ -14,7 +14,7 @@ export interface SaltModel extends Document {
   _id: string;
   salt: string;
   user: UserModel;
-  created_at?: string;
+  createdAt?: string;
 }
 
 export interface PasswordResetModel extends Document {
