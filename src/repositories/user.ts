@@ -5,7 +5,7 @@ import NotFoundError from '@src/shared/errors/not-found';
 import { UserModel } from '@src/shared/interfaces/database';
 
 @Service()
-export default class UserRepository implements BaseRepository<UserModel> {
+export default class UserRepository extends BaseRepository<UserModel> {
   public async create(doc: UserModel): Promise<boolean> {
     try {
       const newUser = new User(doc);
@@ -24,8 +24,7 @@ export default class UserRepository implements BaseRepository<UserModel> {
       if (field === '_id') {
         user = await this.findById(value);
       } else {
-        const filter = {} as { [key: string]: string };
-        filter[field] = value;
+        const filter = this.buildFilterObject(field, value);
 
         user = await User.findOne(filter);
       }
@@ -49,8 +48,7 @@ export default class UserRepository implements BaseRepository<UserModel> {
 
   public async delete(field: string, value: string): Promise<boolean> {
     try {
-      const filter = {} as { [key: string]: string };
-      filter[field] = value;
+      const filter = this.buildFilterObject(field, value);
 
       await User.deleteOne(filter);
 
