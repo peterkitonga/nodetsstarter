@@ -8,7 +8,7 @@ const schema = new Schema<PasswordResetModel>(
   },
   {
     collection: 'password_resets',
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
   },
 );
 

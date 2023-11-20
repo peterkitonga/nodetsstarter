@@ -21,7 +21,7 @@ export interface PasswordResetModel extends Document {
   _id: string;
   email: string;
   token: string;
-  created_at?: string;
+  createdAt?: string;
 }
 
 export interface RefreshTokenModel extends Document {
