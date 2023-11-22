@@ -1,16 +1,15 @@
+import { Service } from 'typedi';
+
 import configs from '@src/configs';
 import Mailer from '@src/core/nodemailer';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
+@Service()
 export default class MailerService {
-  public constructor(private email: string) {
-    //
-  }
-
-  public async sendWelcomeEmail(code: string): Promise<AppResponse<null>> {
+  public async sendWelcomeEmail(email: string, code: string): Promise<AppResponse<null>> {
     try {
       return await Mailer.send(
-        this.email,
+        email,
         `Welcome to ${configs.app.name}`,
         { message: 'Thank you for registering with us. Please click the link below to activate your account.', code },
         'welcome',
@@ -20,10 +19,10 @@ export default class MailerService {
     }
   }
 
-  public async sendResetPasswordEmail(token: string): Promise<AppResponse<null>> {
+  public async sendResetPasswordEmail(email: string, token: string): Promise<AppResponse<null>> {
     try {
       return await Mailer.send(
-        this.email,
+        email,
         `${configs.app.name} reset password`,
         {
           message:

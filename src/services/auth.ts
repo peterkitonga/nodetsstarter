@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { Service } from 'typedi';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '@src/configs';
@@ -15,8 +16,9 @@ import NotFoundError from '@src/shared/errors/not-found';
 import ForbiddenError from '@src/shared/errors/forbidden';
 import UnauthorizedError from '@src/shared/errors/unauthorized';
 
+@Service()
 export default class AuthService {
-  public constructor() {
+  constructor() {
     //
   }
 
