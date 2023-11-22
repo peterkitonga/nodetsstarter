@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 
 import RefreshToken from '@src/models/refresh-token';
+import { BaseRepository } from '@src/repositories/base';
 import { RefreshTokenModel } from '@src/shared/interfaces/database';
 
 @Service()

@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 
 import PasswordReset from '@src/models/password-reset';
+import { BaseRepository } from '@src/repositories/base';
 import { PasswordResetModel } from '@src/shared/interfaces/database';
 
 @Service()

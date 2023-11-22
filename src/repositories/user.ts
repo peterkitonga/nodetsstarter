@@ -1,8 +1,10 @@
 import { Service } from 'typedi';
 
 import User from '@src/models/user';
-import NotFoundError from '@src/shared/errors/not-found';
+import { BaseRepository } from '@src/repositories/base';
 import { UserModel } from '@src/shared/interfaces/database';
+
+import NotFoundError from '@src/shared/errors/not-found';
 
 @Service()
 export default class UserRepository extends BaseRepository<UserModel> {

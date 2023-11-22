@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 
 import Salt from '@src/models/salt';
+import { BaseRepository } from '@src/repositories/base';
 import { SaltModel } from '@src/shared/interfaces/database';
 
 @Service()
