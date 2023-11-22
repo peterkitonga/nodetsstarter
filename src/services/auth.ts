@@ -311,7 +311,7 @@ export default class AuthService {
 
       const refreshToken = new RefreshToken({
         user: user_id,
-        expires_at: Date.now() + additionalTime,
+        expiresAt: Date.now() + additionalTime,
       });
       const result = await refreshToken.save();
 
