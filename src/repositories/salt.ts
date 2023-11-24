@@ -6,7 +6,7 @@ import { SaltModel } from '@src/shared/interfaces/database';
 
 @Service()
 export default class SaltRepository extends BaseRepository<SaltModel> {
-  public async create(doc: SaltModel): Promise<boolean> {
+  public async create(doc: Partial<SaltModel>): Promise<boolean> {
     try {
       const newSalt = new Salt(doc);
       await newSalt.save();
@@ -21,23 +21,15 @@ export default class SaltRepository extends BaseRepository<SaltModel> {
     return {} as SaltModel;
   }
 
-  public async delete(field: string, value: string): Promise<boolean> {
+  public async delete(field: string, value: string, docCount: 'one' | 'many' = 'one'): Promise<boolean> {
     try {
       const filter = this.buildFilterObject(field, value);
 
-      await Salt.deleteOne(filter);
-
-      return true;
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  public async deleteMany(field: string, value: string): Promise<boolean> {
-    try {
-      const filter = this.buildFilterObject(field, value);
-
-      await Salt.deleteMany(filter);
+      if (docCount === 'one') {
+        await Salt.deleteOne(filter);
+      } else {
+        await Salt.deleteMany(filter);
+      }
 
       return true;
     } catch (err) {

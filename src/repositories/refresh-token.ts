@@ -6,7 +6,7 @@ import { RefreshTokenModel } from '@src/shared/interfaces/database';
 
 @Service()
 export default class RefreshTokenRepository extends BaseRepository<RefreshTokenModel> {
-  public async create(doc: RefreshTokenModel): Promise<RefreshTokenModel> {
+  public async create(doc: Partial<RefreshTokenModel>): Promise<RefreshTokenModel> {
     try {
       const refreshToken = new RefreshToken(doc);
 
@@ -20,11 +20,15 @@ export default class RefreshTokenRepository extends BaseRepository<RefreshTokenM
     return {} as RefreshTokenModel;
   }
 
-  public async delete(field: string, value: string): Promise<boolean> {
+  public async delete(field: string, value: string, docCount: 'one' | 'many' = 'one'): Promise<boolean> {
     try {
       const filter = this.buildFilterObject(field, value);
 
-      await RefreshToken.deleteOne(filter);
+      if (docCount === 'one') {
+        await RefreshToken.deleteOne(filter);
+      } else {
+        await RefreshToken.deleteMany(filter);
+      }
 
       return true;
     } catch (err) {
@@ -35,18 +39,6 @@ export default class RefreshTokenRepository extends BaseRepository<RefreshTokenM
   public async findByIdAndDelete(id: string): Promise<RefreshTokenModel | null> {
     try {
       return await RefreshToken.findByIdAndDelete(id);
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  public async deleteMany(field: string, value: string): Promise<boolean> {
-    try {
-      const filter = this.buildFilterObject(field, value);
-
-      await RefreshToken.deleteMany(filter);
-
-      return true;
     } catch (err) {
       throw err;
     }

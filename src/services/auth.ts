@@ -4,9 +4,9 @@ import { Service } from 'typedi';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '@src/configs';
-import Salt from '@src/models/salt';
-import RefreshToken from '@src/models/refresh-token';
 import UserRepository from '@src/repositories/user';
+import SaltRepository from '@src/repositories/salt';
+import RefreshTokenRepository from '@src/repositories/refresh-token';
 import PasswordResetRepository from '@src/repositories/password-reset';
 import { AppResponse, TokenResponse } from '@src/shared/interfaces/responses';
 import { AuthRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
@@ -18,11 +18,16 @@ import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 @Service()
 export default class AuthService {
-  constructor(private userRepository: UserRepository, private passwordResetRepository: PasswordResetRepository) {
+  constructor(
+    private userRepository: UserRepository,
+    private passwordResetRepository: PasswordResetRepository,
+    private refreshTokenRepository: RefreshTokenRepository,
+    private saltRepository: SaltRepository,
+  ) {
     //
   }
 
-  public async registerUser({ name, email, password }: AuthRequest): Promise<AppResponse<SaltModel>> {
+  public async registerUser({ name, email, password }: AuthRequest): Promise<AppResponse<Partial<SaltModel>>> {
     try {
       const isRegistered = await this.userRepository.isRegistered(email);
 
@@ -31,13 +36,18 @@ export default class AuthService {
       } else {
         const buffer = crypto.randomBytes(64);
         const hashedPassword = await bcrypt.hash(password, 12);
+        const salt = buffer.toString('hex');
 
         const newUser = await this.userRepository.create({ name, email, password: hashedPassword, isActivated: false });
 
-        const newSalt = new Salt({ salt: buffer.toString('hex'), user: newUser._id });
-        const storedSalt = await newSalt.save();
+        await this.saltRepository.create({ salt, user: newUser._id });
 
-        return { status: 'success', data: storedSalt };
+        return {
+          status: 'success',
+          data: {
+            salt,
+          },
+        };
       }
     } catch (err) {
       throw err;
@@ -93,7 +103,7 @@ export default class AuthService {
 
   public async activateUser(code: string): Promise<AppResponse<Partial<UserModel>>> {
     try {
-      const isValidCode = await Salt.findOne({ salt: code });
+      const isValidCode = await this.saltRepository.findBySalt(code);
 
       if (isValidCode) {
         const currentSalt = isValidCode;
@@ -105,7 +115,7 @@ export default class AuthService {
           user!.isActivated = true;
           const { name, email, isActivated } = await user!.save();
 
-          await Salt.deleteOne({ salt: currentSalt.salt });
+          await this.saltRepository.delete('salt', currentSalt.salt);
 
           return {
             status: 'success',
@@ -156,8 +166,8 @@ export default class AuthService {
         const updatedUser = await this.userRepository.update('email', email, { password: hashedPassword });
 
         await this.passwordResetRepository.delete('email', email);
-        await Salt.deleteMany({ user: updatedUser! });
-        await RefreshToken.deleteMany({ user: updatedUser! });
+        await this.saltRepository.delete('user', updatedUser!._id, 'many');
+        await this.refreshTokenRepository.delete('user', updatedUser!._id, 'many');
 
         return { status: 'success', data: { email } };
       } else {
@@ -174,13 +184,13 @@ export default class AuthService {
 
       if (isDecodedToken) {
         const decodedToken = <{ token: string; duration: number; salt: string }>isDecodedToken;
-        const isValidToken = await Salt.exists({ salt: decodedToken.salt });
+        const isValidToken = await this.saltRepository.isValid(decodedToken.salt);
 
         if (isValidToken) {
-          const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
+          const existingToken = await this.refreshTokenRepository.findByIdAndDelete(decodedToken.token);
           const authUser = await this.userRepository.findById(existingToken!.user);
 
-          await Salt.deleteOne({ salt: decodedToken.salt });
+          await this.saltRepository.delete('salt', decodedToken.salt);
 
           const generatedTokens = await this.generateTokens({
             user_id: authUser!._id.toString(),
@@ -283,8 +293,8 @@ export default class AuthService {
       const decode = jwt.decode(token);
       const decodedToken = <{ token: string }>decode;
 
-      await Salt.deleteOne({ salt });
-      await RefreshToken.deleteOne({ _id: decodedToken.token });
+      await this.saltRepository.delete('salt', salt);
+      await this.refreshTokenRepository.findByIdAndDelete(decodedToken.token);
 
       return { status: 'success', message: 'Successfully logged out.' };
     } catch (err) {
@@ -301,14 +311,12 @@ export default class AuthService {
   }): Promise<AppResponse<RefreshTokenModel>> {
     try {
       const additionalTime = 3600 * duration * 1000;
-
-      const refreshToken = new RefreshToken({
+      const newRefreshToken = await this.refreshTokenRepository.create({
         user: user_id,
-        expiresAt: Date.now() + additionalTime,
+        expiresAt: new Date(Date.now() + additionalTime).toString(),
       });
-      const result = await refreshToken.save();
 
-      return { status: 'success', data: result };
+      return { status: 'success', data: newRefreshToken };
     } catch (err) {
       throw err;
     }
@@ -325,8 +333,7 @@ export default class AuthService {
       const buffer = crypto.randomBytes(64);
       const salt = buffer.toString('hex');
 
-      const newSalt = new Salt({ salt, user: user_id });
-      await newSalt.save();
+      await this.saltRepository.create({ salt, user: user_id });
 
       const newToken = await this.createRefreshToken({ user_id, duration });
       const refreshToken = jwt.sign(

@@ -34,7 +34,7 @@ export default class AuthController {
       const request = req.body;
       const registration = await this.authService.registerUser(request);
 
-      await this.mailerService.sendWelcomeEmail(request.email, registration.data!.salt);
+      await this.mailerService.sendWelcomeEmail(request.email, registration.data!.salt!);
 
       res.status(HttpStatusCodes.CREATED).json({
         status: 'success',
