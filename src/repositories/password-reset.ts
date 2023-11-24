@@ -6,7 +6,7 @@ import { PasswordResetModel } from '@src/shared/interfaces/database';
 
 @Service()
 export default class PasswordResetRepository extends BaseRepository<PasswordResetModel> {
-  public async create(doc: PasswordResetModel): Promise<boolean> {
+  public async create(doc: Partial<PasswordResetModel>): Promise<boolean> {
     try {
       const passwordReset = new PasswordReset(doc);
       await passwordReset.save();
