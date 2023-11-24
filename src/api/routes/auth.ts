@@ -1,28 +1,30 @@
 import { Router } from 'express';
+import { Container } from 'typedi';
 
 import AuthController from '@src/api/controllers/auth';
 import AuthCheck from '@src/api/middlewares/check/auth';
 import AuthValidator from '@src/api/middlewares/validation/auth';
 
 const authRouter = Router();
+const authController = Container.get(AuthController);
 
-export default (appRouter: Router): void => {
-  appRouter.use('/auth', authRouter);
+export default (router: Router): void => {
+  router.use('/auth', authRouter);
 
-  authRouter.post('/register', AuthValidator.registerUser, AuthController.registerUser);
-  authRouter.post('/login', AuthValidator.authenticateUser, AuthController.authenticateUser);
-  authRouter.get('/activate/:code', AuthController.activateUser);
-  authRouter.post('/send/reset/link', AuthValidator.sendResetLink, AuthController.sendResetLink);
-  authRouter.post('/reset/password', AuthValidator.resetPassword, AuthController.resetPassword);
-  authRouter.get('/refresh/token', AuthController.refreshToken);
-  authRouter.get('/user', AuthCheck.verifyToken, AuthController.getUser);
-  authRouter.put('/update/user', AuthCheck.verifyToken, AuthValidator.updateUser, AuthController.updateUser);
-  authRouter.put('/update/avatar', AuthCheck.verifyToken, AuthValidator.updateAvatar, AuthController.updateAvatar);
+  authRouter.post('/register', AuthValidator.registerUser, authController.registerUser);
+  authRouter.post('/login', AuthValidator.authenticateUser, authController.authenticateUser);
+  authRouter.get('/activate/:code', authController.activateUser);
+  authRouter.post('/send/reset/link', AuthValidator.sendResetLink, authController.sendResetLink);
+  authRouter.post('/reset/password', AuthValidator.resetPassword, authController.resetPassword);
+  authRouter.get('/refresh/token', authController.refreshToken);
+  authRouter.get('/user', AuthCheck.verifyToken, authController.getUser);
+  authRouter.put('/update/user', AuthCheck.verifyToken, AuthValidator.updateUser, authController.updateUser);
+  authRouter.put('/update/avatar', AuthCheck.verifyToken, AuthValidator.updateAvatar, authController.updateAvatar);
   authRouter.put(
     '/update/password',
     AuthCheck.verifyToken,
     AuthValidator.updatePassword,
-    AuthController.updatePassword,
+    authController.updatePassword,
   );
-  authRouter.get('/logout', AuthCheck.verifyToken, AuthController.logoutUser);
+  authRouter.get('/logout', AuthCheck.verifyToken, authController.logoutUser);
 };

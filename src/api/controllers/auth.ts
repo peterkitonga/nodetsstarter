@@ -1,3 +1,4 @@
+import { Service } from 'typedi';
 import { Request, Response, NextFunction } from 'express';
 
 import configs from '@src/configs';
@@ -13,13 +14,14 @@ import { AuthRequest, ActivationRequest, ResetPasswordRequest, FileRequest } fro
 import ForbiddenError from '@src/shared/errors/forbidden';
 import UnauthorizedError from '@src/shared/errors/unauthorized';
 
-class AuthController {
-  private authService: AuthService;
-  private fileStorageService: FileStorageService;
-
-  public constructor() {
-    this.authService = new AuthService();
-    this.fileStorageService = new FileStorageService();
+@Service()
+export default class AuthController {
+  constructor(
+    private authService: AuthService,
+    private fileStorageService: FileStorageService,
+    private mailerService: MailerService,
+  ) {
+    //
   }
 
   @Autobind
@@ -30,9 +32,9 @@ class AuthController {
   ): Promise<void> {
     try {
       const request = req.body;
-      const mailerService = new MailerService(request.email);
       const registration = await this.authService.registerUser(request);
-      await mailerService.sendWelcomeEmail(registration.data!.salt);
+
+      await this.mailerService.sendWelcomeEmail(request.email, registration.data!.salt);
 
       res.status(HttpStatusCodes.CREATED).json({
         status: 'success',
@@ -97,9 +99,9 @@ class AuthController {
   ): Promise<void> {
     try {
       const request = req.body;
-      const mailerService = new MailerService(request.email!);
       const reset = await this.authService.createResetToken(request.email!);
-      await mailerService.sendResetPasswordEmail(reset.data!.token!);
+
+      await this.mailerService.sendResetPasswordEmail(request.email!, reset.data!.token!);
 
       res
         .status(HttpStatusCodes.CREATED)
@@ -240,5 +242,3 @@ class AuthController {
     }
   }
 }
-
-export default new AuthController();

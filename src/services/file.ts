@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Service } from 'typedi';
 import { unlink, symlink, writeFile } from 'fs/promises';
 
 import configs from '@src/configs';
@@ -6,11 +7,8 @@ import { publicPath } from '@src/utils/path';
 import SThreeClient from '@src/core/aws-sthree';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
+@Service()
 export default class FileStorageService {
-  public constructor() {
-    //
-  }
-
   public async storeFile(base64String: string): Promise<AppResponse<string>> {
     try {
       const storageProvider = configs.filesystems.provider;

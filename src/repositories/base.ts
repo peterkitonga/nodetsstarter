@@ -1,4 +1,4 @@
-abstract class BaseRepository<T> {
+export abstract class BaseRepository<T> {
   abstract create(doc: T): Promise<T | boolean>;
   abstract update(field: string, value: string, updatedDoc: T): Promise<T | boolean>;
   abstract delete(field: string, value: string): Promise<T | boolean>;

@@ -1,12 +1,13 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { Service } from 'typedi';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '@src/configs';
-import User from '@src/models/user';
 import Salt from '@src/models/salt';
 import RefreshToken from '@src/models/refresh-token';
-import PasswordReset from '@src/models/password-reset';
+import UserRepository from '@src/repositories/user';
+import PasswordResetRepository from '@src/repositories/password-reset';
 import { AppResponse, TokenResponse } from '@src/shared/interfaces/responses';
 import { AuthRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
 import { UserModel, PasswordResetModel, RefreshTokenModel, SaltModel } from '@src/shared/interfaces/database';
@@ -15,14 +16,15 @@ import NotFoundError from '@src/shared/errors/not-found';
 import ForbiddenError from '@src/shared/errors/forbidden';
 import UnauthorizedError from '@src/shared/errors/unauthorized';
 
+@Service()
 export default class AuthService {
-  public constructor() {
+  constructor(private userRepository: UserRepository, private passwordResetRepository: PasswordResetRepository) {
     //
   }
 
   public async registerUser({ name, email, password }: AuthRequest): Promise<AppResponse<SaltModel>> {
     try {
-      const isRegistered = await User.exists({ email });
+      const isRegistered = await this.userRepository.isRegistered(email);
 
       if (isRegistered) {
         throw new ForbiddenError(`User with email '${email}' already exists.`);
@@ -30,8 +32,7 @@ export default class AuthService {
         const buffer = crypto.randomBytes(64);
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        const newUser = new User({ name, email, password: hashedPassword, isActivated: false });
-        await newUser.save();
+        const newUser = await this.userRepository.create({ name, email, password: hashedPassword, isActivated: false });
 
         const newSalt = new Salt({ salt: buffer.toString('hex'), user: newUser._id });
         const storedSalt = await newSalt.save();
@@ -45,7 +46,7 @@ export default class AuthService {
 
   public async authenticateUser({ email, password, remember_me }: AuthRequest): Promise<AppResponse<TokenResponse>> {
     try {
-      const user = await User.findOne({ email });
+      const user = await this.userRepository.findByEmail(email);
 
       if (user) {
         if (user.isActivated) {
@@ -96,7 +97,7 @@ export default class AuthService {
 
       if (isValidCode) {
         const currentSalt = isValidCode;
-        const user = await User.findById(currentSalt.user);
+        const user = await this.userRepository.findById(currentSalt.user);
 
         if (user!.isActivated) {
           throw new ForbiddenError(`User account with activation code '${code}' is already activated.`);
@@ -125,12 +126,13 @@ export default class AuthService {
 
   public async createResetToken(email: string): Promise<AppResponse<Partial<PasswordResetModel>>> {
     try {
-      const isRegistered = await User.exists({ email });
+      const isRegistered = await this.userRepository.isRegistered(email);
 
       if (isRegistered) {
         const buffer = crypto.randomBytes(64);
-        const passwordReset = new PasswordReset({ email, token: buffer.toString('hex') });
-        const { token } = await passwordReset.save();
+        const token = buffer.toString('hex');
+
+        await this.passwordResetRepository.create({ email, token });
 
         return { status: 'success', data: { email, token } };
       } else {
@@ -146,19 +148,16 @@ export default class AuthService {
     password,
   }: ResetPasswordRequest): Promise<AppResponse<Partial<PasswordResetModel>>> {
     try {
-      const isValidToken = await PasswordReset.findOne({ token });
+      const validToken = await this.passwordResetRepository.findByToken(token!);
 
-      if (isValidToken) {
-        const { email } = isValidToken;
+      if (validToken) {
+        const { email } = validToken;
         const hashedPassword = await bcrypt.hash(password!, 12);
+        const updatedUser = await this.userRepository.update('email', email, { password: hashedPassword });
 
-        const currentUser = await User.findOne({ email });
-        currentUser!.password = hashedPassword;
-        await currentUser!.save();
-
-        await PasswordReset.deleteOne({ email });
-        await Salt.deleteMany({ user: currentUser! });
-        await RefreshToken.deleteMany({ user: currentUser! });
+        await this.passwordResetRepository.delete('email', email);
+        await Salt.deleteMany({ user: updatedUser! });
+        await RefreshToken.deleteMany({ user: updatedUser! });
 
         return { status: 'success', data: { email } };
       } else {
@@ -179,7 +178,8 @@ export default class AuthService {
 
         if (isValidToken) {
           const existingToken = await RefreshToken.findByIdAndDelete(decodedToken.token);
-          const authUser = await User.findById(existingToken!.user);
+          const authUser = await this.userRepository.findById(existingToken!.user);
+
           await Salt.deleteOne({ salt: decodedToken.salt });
 
           const generatedTokens = await this.generateTokens({
@@ -212,7 +212,7 @@ export default class AuthService {
 
   public async getUser(userId: string): Promise<AppResponse<Partial<UserModel>>> {
     try {
-      const user = await User.findById(userId);
+      const user = await this.userRepository.findById(userId);
       const { name, email, avatar, isActivated, createdAt } = user!;
 
       return {
@@ -226,19 +226,16 @@ export default class AuthService {
 
   public async updateUser(userId: string, { name, email }: AuthRequest): Promise<AppResponse<Partial<UserModel>>> {
     try {
-      const user = await User.findById(userId);
-      user!.name = name!;
-      user!.email = email;
-      const result = await user!.save();
+      const updatedUser = await this.userRepository.update('_id', userId, { name, email });
 
       return {
         status: 'success',
         data: {
-          name: result.name,
-          email: result.email,
-          avatar: result.avatar,
-          isActivated: result.isActivated,
-          createdAt: result.createdAt,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          avatar: updatedUser.avatar,
+          isActivated: updatedUser.isActivated,
+          createdAt: updatedUser.createdAt,
         },
       };
     } catch (err) {
@@ -251,14 +248,12 @@ export default class AuthService {
     url,
   }: Record<'user_id' | 'url', string>): Promise<AppResponse<Partial<UserModel>>> {
     try {
-      const user = await User.findById(user_id);
-      user!.avatar = url;
-      const result = await user!.save();
-      const { name, email, avatar, isActivated, createdAt } = result;
+      const updatedUser = await this.userRepository.update('_id', user_id, { avatar: url });
+      const { name, email, avatar, isActivated, createdAt } = updatedUser;
 
       return {
         status: 'success',
-        data: { name, email, avatar, isActivated: isActivated, createdAt: createdAt },
+        data: { name, email, avatar, isActivated, createdAt },
       };
     } catch (err) {
       throw err;
@@ -272,9 +267,7 @@ export default class AuthService {
     try {
       const hashedPassword = await bcrypt.hash(password!, 12);
 
-      const user = await User.findById(user_id);
-      user!.password = hashedPassword;
-      await user!.save();
+      await this.userRepository.update('_id', user_id, { password: hashedPassword });
 
       return {
         status: 'success',

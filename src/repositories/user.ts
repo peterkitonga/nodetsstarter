@@ -1,23 +1,24 @@
 import { Service } from 'typedi';
 
 import User from '@src/models/user';
-import NotFoundError from '@src/shared/errors/not-found';
+import { BaseRepository } from '@src/repositories/base';
 import { UserModel } from '@src/shared/interfaces/database';
+
+import NotFoundError from '@src/shared/errors/not-found';
 
 @Service()
 export default class UserRepository extends BaseRepository<UserModel> {
-  public async create(doc: UserModel): Promise<boolean> {
+  public async create(doc: Partial<UserModel>): Promise<UserModel> {
     try {
       const newUser = new User(doc);
-      await newUser.save();
 
-      return true;
+      return await newUser.save();
     } catch (err) {
       throw err;
     }
   }
 
-  public async update(field: string, value: string, doc: UserModel): Promise<UserModel> {
+  public async update(field: string, value: string, doc: Partial<UserModel>): Promise<UserModel> {
     try {
       let user: UserModel | null;
 
@@ -38,9 +39,7 @@ export default class UserRepository extends BaseRepository<UserModel> {
         user[key] = doc[key];
       }
 
-      await user.save();
-
-      return user;
+      return await user.save();
     } catch (err) {
       throw err;
     }
