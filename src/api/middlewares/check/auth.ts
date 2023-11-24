@@ -1,3 +1,4 @@
+import { Service } from 'typedi';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
@@ -5,7 +6,8 @@ import configs from '@src/configs';
 import Salt from '@src/models/salt';
 import UnauthorizedError from '@src/shared/errors/unauthorized';
 
-class AuthCheck {
+@Service()
+export default class AuthCheck {
   public constructor() {
     //
   }
@@ -46,5 +48,3 @@ class AuthCheck {
     }
   }
 }
-
-export default new AuthCheck();

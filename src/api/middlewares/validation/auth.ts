@@ -1,11 +1,14 @@
+import { Service } from 'typedi';
 import joi, { CustomHelpers } from 'joi';
 import { Request, Response, NextFunction } from 'express';
+
 import Autobind from '@src/shared/decorators/autobind';
 
 import ValidationError from '@src/shared/errors/validation';
 import { AuthRequest, FileRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
 
-class AuthValidator {
+@Service()
+export default class AuthValidator {
   public constructor() {
     //
   }
@@ -296,5 +299,3 @@ class AuthValidator {
     }
   }
 }
-
-export default new AuthValidator();
