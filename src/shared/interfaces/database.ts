@@ -13,7 +13,7 @@ export interface UserModel extends Document {
 export interface SaltModel extends Document {
   _id: string;
   salt: string;
-  user: UserModel;
+  user: UserModel | string;
   createdAt?: string;
 }
 
@@ -26,7 +26,7 @@ export interface PasswordResetModel extends Document {
 
 export interface RefreshTokenModel extends Document {
   _id: string;
-  user: UserModel;
+  user: UserModel | string;
   createdAt?: string;
   expiresAt?: string;
 }
