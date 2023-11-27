@@ -153,10 +153,7 @@ export default class AuthService {
     }
   }
 
-  public async resetPassword({
-    token,
-    password,
-  }: ResetPasswordRequest): Promise<AppResponse<Partial<PasswordResetModel>>> {
+  public async resetPassword({ token, password }: ResetPasswordRequest): Promise<AppResponse<Partial<PasswordResetModel>>> {
     try {
       const validToken = await this.passwordResetRepository.findByToken(token!);
 
@@ -253,10 +250,7 @@ export default class AuthService {
     }
   }
 
-  public async updateAvatar({
-    user_id,
-    url,
-  }: Record<'user_id' | 'url', string>): Promise<AppResponse<Partial<UserModel>>> {
+  public async updateAvatar({ user_id, url }: Record<'user_id' | 'url', string>): Promise<AppResponse<Partial<UserModel>>> {
     try {
       const updatedUser = await this.userRepository.update('_id', user_id, { avatar: url });
       const { name, email, avatar, isActivated, createdAt } = updatedUser;
@@ -270,10 +264,7 @@ export default class AuthService {
     }
   }
 
-  public async updatePassword({
-    user_id,
-    password,
-  }: Record<'user_id' | 'password', string>): Promise<AppResponse<null>> {
+  public async updatePassword({ user_id, password }: Record<'user_id' | 'password', string>): Promise<AppResponse<null>> {
     try {
       const hashedPassword = await bcrypt.hash(password!, 12);
 
@@ -302,13 +293,7 @@ export default class AuthService {
     }
   }
 
-  private async createRefreshToken({
-    user_id,
-    duration,
-  }: {
-    user_id: string;
-    duration: number;
-  }): Promise<AppResponse<RefreshTokenModel>> {
+  private async createRefreshToken({ user_id, duration }: { user_id: string; duration: number }): Promise<AppResponse<RefreshTokenModel>> {
     try {
       const additionalTime = 3600 * duration * 1000;
       const newRefreshToken = await this.refreshTokenRepository.create({
@@ -322,13 +307,7 @@ export default class AuthService {
     }
   }
 
-  private async generateTokens({
-    user_id,
-    duration,
-  }: {
-    user_id: string;
-    duration: number;
-  }): Promise<AppResponse<Partial<TokenResponse>>> {
+  private async generateTokens({ user_id, duration }: { user_id: string; duration: number }): Promise<AppResponse<Partial<TokenResponse>>> {
     try {
       const buffer = crypto.randomBytes(64);
       const salt = buffer.toString('hex');

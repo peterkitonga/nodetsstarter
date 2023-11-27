@@ -27,12 +27,7 @@ class Mailer {
     });
   }
 
-  public async send(
-    receiver: string,
-    subject: string,
-    messageOptions: ejs.Data,
-    view: string,
-  ): Promise<AppResponse<null>> {
+  public async send(receiver: string, subject: string, messageOptions: ejs.Data, view: string): Promise<AppResponse<null>> {
     // send mail with defined transport object
     try {
       const viewResponse = await this.getViewData(view, messageOptions);

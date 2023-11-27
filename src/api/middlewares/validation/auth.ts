@@ -1,11 +1,14 @@
+import { Service } from 'typedi';
 import joi, { CustomHelpers } from 'joi';
 import { Request, Response, NextFunction } from 'express';
+
 import Autobind from '@src/shared/decorators/autobind';
 
 import ValidationError from '@src/shared/errors/validation';
 import { AuthRequest, FileRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
 
-class AuthValidator {
+@Service()
+export default class AuthValidator {
   public constructor() {
     //
   }
@@ -25,11 +28,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async registerUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async registerUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -74,11 +73,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async authenticateUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async authenticateUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -114,11 +109,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async sendResetLink(
-    req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async sendResetLink(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -143,11 +134,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async resetPassword(
-    req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async resetPassword(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -184,11 +171,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async updateUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updateUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -220,11 +203,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async updateAvatar(
-    req: Request<unknown, unknown, FileRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updateAvatar(req: Request<unknown, unknown, FileRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -261,11 +240,7 @@ class AuthValidator {
   }
 
   @Autobind
-  public async updatePassword(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updatePassword(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -296,5 +271,3 @@ class AuthValidator {
     }
   }
 }
-
-export default new AuthValidator();

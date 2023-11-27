@@ -16,20 +16,12 @@ import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 @Service()
 export default class AuthController {
-  constructor(
-    private authService: AuthService,
-    private fileStorageService: FileStorageService,
-    private mailerService: MailerService,
-  ) {
+  constructor(private authService: AuthService, private fileStorageService: FileStorageService, private mailerService: MailerService) {
     //
   }
 
   @Autobind
-  public async registerUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response<AppResponse<null>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async registerUser(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
       const registration = await this.authService.registerUser(request);
@@ -46,11 +38,7 @@ export default class AuthController {
   }
 
   @Autobind
-  public async authenticateUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response<AppResponse<Partial<TokenResponse>>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async authenticateUser(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<Partial<TokenResponse>>>, next: NextFunction): Promise<void> {
     try {
       let maxAge: number;
       const request = req.body;
@@ -74,49 +62,33 @@ export default class AuthController {
   }
 
   @Autobind
-  public async activateUser(
-    req: Request<ActivationRequest>,
-    res: Response<AppResponse<null>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async activateUser(req: Request<ActivationRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.params;
       const activation = await this.authService.activateUser(request.code);
 
-      res
-        .status(HttpStatusCodes.OK)
-        .json({ status: 'status', message: `User with email '${activation.data!.email}' successfully activated.` });
+      res.status(HttpStatusCodes.OK).json({ status: 'status', message: `User with email '${activation.data!.email}' successfully activated.` });
     } catch (err) {
       next(err);
     }
   }
 
   @Autobind
-  public async sendResetLink(
-    req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response<AppResponse<null>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async sendResetLink(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
       const reset = await this.authService.createResetToken(request.email!);
 
       await this.mailerService.sendResetPasswordEmail(request.email!, reset.data!.token!);
 
-      res
-        .status(HttpStatusCodes.CREATED)
-        .json({ status: 'status', message: `A password reset link has been sent to '${request.email}'.` });
+      res.status(HttpStatusCodes.CREATED).json({ status: 'status', message: `A password reset link has been sent to '${request.email}'.` });
     } catch (err) {
       next(err);
     }
   }
 
   @Autobind
-  public async resetPassword(
-    req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response<AppResponse<null>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async resetPassword(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const { token, password } = req.body;
       const resetPassword = await this.authService.resetPassword({ token, password });
@@ -131,11 +103,7 @@ export default class AuthController {
   }
 
   @Autobind
-  public async refreshToken(
-    req: Request,
-    res: Response<AppResponse<Partial<TokenResponse>>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async refreshToken(req: Request, res: Response<AppResponse<Partial<TokenResponse>>>, next: NextFunction): Promise<void> {
     try {
       if (req.cookies && req.cookies.refresh_token) {
         const refreshToken = await this.authService.refreshToken(req.cookies.refresh_token);
@@ -145,9 +113,7 @@ export default class AuthController {
           maxAge: 3600 * Number(lifetime) * 1000,
           httpOnly: true,
         });
-        res
-          .status(HttpStatusCodes.CREATED)
-          .json({ status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime } });
+        res.status(HttpStatusCodes.CREATED).json({ status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime } });
       } else {
         throw new UnauthorizedError(`Authentication failed. Please login.`);
       }
@@ -157,11 +123,7 @@ export default class AuthController {
   }
 
   @Autobind
-  public async getUser(
-    req: Request,
-    res: Response<AppResponse<Partial<UserModel>>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async getUser(req: Request, res: Response<AppResponse<Partial<UserModel>>>, next: NextFunction): Promise<void> {
     try {
       const getUser = await this.authService.getUser(req.auth!);
 
@@ -172,11 +134,7 @@ export default class AuthController {
   }
 
   @Autobind
-  public async updateUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response<AppResponse<Partial<UserModel>>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updateUser(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<Partial<UserModel>>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
       const updateUser = await this.authService.updateUser(req.auth!, request);
@@ -188,11 +146,7 @@ export default class AuthController {
   }
 
   @Autobind
-  public async updateAvatar(
-    req: Request<unknown, unknown, FileRequest>,
-    res: Response<AppResponse<Partial<UserModel>>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updateAvatar(req: Request<unknown, unknown, FileRequest>, res: Response<AppResponse<Partial<UserModel>>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
       const { data } = await this.authService.getUser(req.auth!);
@@ -211,11 +165,7 @@ export default class AuthController {
   }
 
   @Autobind
-  public async updatePassword(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response<AppResponse<null>>,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updatePassword(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
       const updatePassword = await this.authService.updatePassword({ user_id: req.auth!, password: request.password });

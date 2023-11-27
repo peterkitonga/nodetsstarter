@@ -95,9 +95,7 @@ class ExpressApp {
 
   public handleHomeRoute(): void {
     this.app.get('/', (req: Request, res: Response) => {
-      res
-        .status(HttpStatusCodes.OK)
-        .json({ message: `Hello There! Welcome to ${configs.app.name}`, version: configs.app.api.version });
+      res.status(HttpStatusCodes.OK).json({ message: `Hello There! Welcome to ${configs.app.name}`, version: configs.app.api.version });
     });
   }
 
