@@ -3,12 +3,12 @@ import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
 import configs from '@src/configs';
-import Salt from '@src/models/salt';
+import SaltRepository from '@src/repositories/salt';
 import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 @Service()
 export default class AuthCheck {
-  public constructor() {
+  public constructor(private saltRepository: SaltRepository) {
     //
   }
 
@@ -23,7 +23,7 @@ export default class AuthCheck {
 
         if (isDecodedToken) {
           const decodedToken = <{ auth: string; salt: string }>isDecodedToken;
-          const isValidToken = await Salt.exists({ salt: decodedToken.salt });
+          const isValidToken = await this.saltRepository.isValid(decodedToken.salt);
 
           if (isValidToken) {
             req.auth = decodedToken.auth;
