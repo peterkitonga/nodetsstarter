@@ -28,11 +28,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async registerUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async registerUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -77,11 +73,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async authenticateUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async authenticateUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -117,11 +109,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async sendResetLink(
-    req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async sendResetLink(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -146,11 +134,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async resetPassword(
-    req: Request<unknown, unknown, ResetPasswordRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async resetPassword(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -187,11 +171,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async updateUser(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updateUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -223,11 +203,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async updateAvatar(
-    req: Request<unknown, unknown, FileRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updateAvatar(req: Request<unknown, unknown, FileRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
@@ -264,11 +240,7 @@ export default class AuthValidator {
   }
 
   @Autobind
-  public async updatePassword(
-    req: Request<unknown, unknown, AuthRequest>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  public async updatePassword(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
 
     try {
