@@ -3,7 +3,7 @@ import { Container } from 'typedi';
 
 import AuthController from '@src/api/controllers/auth';
 import AuthCheck from '@src/api/middlewares/check/auth';
-import AuthValidator from '@src/api/middlewares/validation/auth';
+import AuthValidator from '@src/api/middlewares/validators/auth';
 
 const authRouter = Router();
 const authValidator = Container.get(AuthValidator);
