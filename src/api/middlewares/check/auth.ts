@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import configs from '@src/configs';
 import SaltRepository from '@src/repositories/salt';
+import Autobind from '@src/shared/decorators/autobind';
 import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 @Service()
@@ -12,6 +13,7 @@ export default class AuthCheck {
     //
   }
 
+  @Autobind
   public async verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const authHeader = req.get('Authorization');
