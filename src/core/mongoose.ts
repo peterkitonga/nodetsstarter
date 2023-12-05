@@ -10,11 +10,7 @@ class MongooseConnect {
 
   public async connect(): Promise<AppResponse<null>> {
     try {
-      await connect(configs.database.uri(), {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        useFindAndModify: false,
-      });
+      await connect(configs.database.uri());
 
       return { status: 'success', message: 'MONGO CONNECTED!' };
     } catch (err) {

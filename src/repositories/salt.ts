@@ -45,7 +45,7 @@ export default class SaltRepository extends BaseRepository<SaltModel> {
     }
   }
 
-  public async isValid(salt: string): Promise<boolean> {
+  public async isValid(salt: string): Promise<{ _id: string } | null> {
     try {
       return await Salt.exists({ salt });
     } catch (err) {
