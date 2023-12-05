@@ -45,7 +45,7 @@ export default class AuthController {
       const authentication = await this.authService.authenticateUser(request);
       const { token, refresh_token, lifetime, auth } = authentication.data!;
 
-      if (request.remember_me) {
+      if (request.rememberMe) {
         maxAge = 3600 * 720 * 1000; // 30 days
       } else {
         maxAge = 3600 * 24 * 1000; // 24 hours

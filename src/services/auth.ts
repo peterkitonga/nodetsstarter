@@ -54,7 +54,7 @@ export default class AuthService {
     }
   }
 
-  public async authenticateUser({ email, password, remember_me }: AuthRequest): Promise<AppResponse<TokenResponse>> {
+  public async authenticateUser({ email, password, rememberMe }: AuthRequest): Promise<AppResponse<TokenResponse>> {
     try {
       const user = await this.userRepository.findByEmail(email);
 
@@ -66,7 +66,7 @@ export default class AuthService {
             const { name, avatar, isActivated, createdAt } = user;
             let generatedTokens: AppResponse<Partial<TokenResponse>>;
 
-            if (remember_me) {
+            if (rememberMe) {
               generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 720 });
             } else {
               generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 24 });
