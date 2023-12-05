@@ -1,32 +1,13 @@
+import joi from 'joi';
 import { Service } from 'typedi';
-import joi, { CustomHelpers } from 'joi';
 import { Request, Response, NextFunction } from 'express';
 
 import Autobind from '@src/shared/decorators/autobind';
-
-import ValidationError from '@src/shared/errors/validation';
+import BaseValidator from '@src/api/middlewares/validators/base';
 import { AuthRequest, FileRequest, ResetPasswordRequest } from '@src/shared/interfaces/requests';
 
 @Service()
-export default class AuthValidator {
-  public constructor() {
-    //
-  }
-
-  private handleValidationErrors(error: joi.ValidationError, next: NextFunction): void {
-    const messages = error.details;
-    const formattedMessages = [] as Record<string, string>[];
-
-    for (const message of messages) {
-      formattedMessages.push({
-        field: message['context']!['label']!,
-        message: message['message'],
-      });
-    }
-
-    return next(new ValidationError('There are validation errors for your inputs', formattedMessages));
-  }
-
+export default class AuthValidator extends BaseValidator {
   @Autobind
   public async registerUser(req: Request<unknown, unknown, AuthRequest>, res: Response, next: NextFunction): Promise<void> {
     const request = req.body;
@@ -36,32 +17,10 @@ export default class AuthValidator {
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          name: joi.string().min(3).max(255).trim(true).required().label('name').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
-            'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
-            'any.required': `The {#label} field is required`,
-          }),
-          email: joi.string().email().trim(true).required().label('email').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.email': `The {#label} field should be a valid email`,
-            'any.required': `The {#label} field is required`,
-          }),
-          password: joi.string().min(6).trim(true).required().label('password').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
-            'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
-            'any.required': `The {#label} field is required`,
-          }),
-          password_confirmation: joi
-            .any()
-            .equal(joi.ref('password'))
-            .required()
-            .label('password_confirmation')
-            .options({ messages: { 'any.only': `The {#label} field should match the password` } }),
+          name: this.stringValidationSchema('name').required(),
+          email: this.emailValidationSchema('email').required(),
+          password: this.stringValidationSchema('password', 6).required(),
+          passwordConfirmation: this.confirmValidationSchema('passwordConfirmation', 'password').required(),
         });
 
       await registrationSchema.validateAsync(request);
@@ -81,23 +40,9 @@ export default class AuthValidator {
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          email: joi.string().email().trim(true).required().label('email').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.email': `The {#label} field should be a valid email`,
-            'any.required': `The {#label} field is required`,
-          }),
-          password: joi.string().min(6).trim(true).required().label('password').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
-            'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
-            'any.required': `The {#label} field is required`,
-          }),
-          remember_me: joi.boolean().required().label('remember_me').messages({
-            'boolean.base': `The {#label} field should be true/false`,
-            'any.required': `The {#label} field is required`,
-          }),
+          email: this.emailValidationSchema('email').required(),
+          password: this.stringValidationSchema('password', 6).required(),
+          rememberMe: this.booleanValidationSchema('rememberMe').required(),
         });
 
       await authenticationSchema.validateAsync(request);
@@ -117,12 +62,7 @@ export default class AuthValidator {
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          email: joi.string().email().trim(true).required().label('email').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.email': `The {#label} field should be a valid email`,
-            'any.required': `The {#label} field is required`,
-          }),
+          email: this.emailValidationSchema('email').required(),
         });
 
       await resetSchema.validateAsync(request);
@@ -142,24 +82,9 @@ export default class AuthValidator {
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          token: joi.string().trim(true).required().label('token').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'any.required': `The {#label} field is required`,
-          }),
-          password: joi.string().min(6).trim(true).required().label('password').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
-            'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
-            'any.required': `The {#label} field is required`,
-          }),
-          password_confirmation: joi
-            .any()
-            .equal(joi.ref('password'))
-            .required()
-            .label('password_confirmation')
-            .options({ messages: { 'any.only': `The {#label} field should match the password` } }),
+          token: this.stringValidationSchema('token').required(),
+          password: this.stringValidationSchema('password', 6),
+          passwordConfirmation: this.confirmValidationSchema('passwordConfirmation', 'password').required(),
         });
 
       await resetPasswordSchema.validateAsync(request);
@@ -179,19 +104,8 @@ export default class AuthValidator {
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          name: joi.string().min(3).max(255).trim(true).required().label('name').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
-            'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
-            'any.required': `The {#label} field is required`,
-          }),
-          email: joi.string().email().trim(true).required().label('email').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.email': `The {#label} field should be a valid email`,
-            'any.required': `The {#label} field is required`,
-          }),
+          name: this.stringValidationSchema('name').required(),
+          email: this.emailValidationSchema('email').required(),
         });
 
       await updateUserSchema.validateAsync(request);
@@ -207,28 +121,11 @@ export default class AuthValidator {
     const request = req.body;
 
     try {
-      const method = (value: string, helpers: CustomHelpers) => {
-        const fileMimeType = value.substring('data:'.length, value.indexOf(';base64'));
-        const validMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
-
-        if (!validMimeTypes.includes(fileMimeType)) {
-          return helpers.error('any.invalid');
-        } else {
-          return value;
-        }
-      };
-
       const updateAvatarSchema = joi
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          file: joi.string().dataUri().trim(true).required().custom(method).label('file').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.dataUri': `The {#label} field should be a valid data uri`,
-            'any.invalid': `The {#label} field should be a png, jpg, gif or svg`,
-            'any.required': `The {#label} field is required`,
-          }),
+          file: this.imageValidationSchema('file').required(),
         });
 
       await updateAvatarSchema.validateAsync(request);
@@ -248,19 +145,8 @@ export default class AuthValidator {
         .object()
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
-          password: joi.string().min(6).trim(true).required().label('password').messages({
-            'string.base': `The {#label} field should be text`,
-            'string.empty': `The {#label} field cannot be empty`,
-            'string.min': `The {#label} field should have a minimum length of {#limit} characters`,
-            'string.max': `The {#label} field should have a maximum length of {#limit} characters`,
-            'any.required': `The {#label} field is required`,
-          }),
-          password_confirmation: joi
-            .any()
-            .equal(joi.ref('password'))
-            .required()
-            .label('password_confirmation')
-            .options({ messages: { 'any.only': `The {#label} field should match the password` } }),
+          password: this.stringValidationSchema('password', 6).required(),
+          passwordConfirmation: this.confirmValidationSchema('passwordConfirmation', 'password').required(),
         });
 
       await updatePasswordSchema.validateAsync(request);
