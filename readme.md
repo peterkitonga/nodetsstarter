@@ -40,7 +40,8 @@
     |   |   |-- routes/           # Routes for the REST API
     |   |-- configs/              # Configurations retrieved from env variables
     |   |-- core/                 # Core modules split for easier startup of the application
-    |   |-- models/               # Mongoose models as data access layer
+    |   |-- models/               # Mongoose models for retrieving mongodb documents
+    |   |-- repositories/         # Database query classes as data access layer
     |   |-- services/             # Main business logic code as service layer
     |   |-- shared/               
     |   |   |-- abstracts/        # Custom abstract classes
@@ -67,7 +68,7 @@ To begin using the starter project, first copy the example variables into a `.en
 
 - `NODE_ENV` - `production` or `development`
 
-- `MONGO_PROVIDER` - `local` or `atlas`([MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
+- `MONGO_PROVIDER` - `local` or `atlas`(for [MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
 
 - `MONGO_HOST` - if `atlas`, pass the domain provided after the `@` symbol when you click on `connect` > `Connect your application`
 
