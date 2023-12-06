@@ -14,4 +14,11 @@ const schema = new Schema<UserModel>(
   },
 );
 
+schema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    delete returnedObject.updatedAt;
+    delete returnedObject.__v;
+  },
+});
+
 export default model<UserModel>('User', schema);
