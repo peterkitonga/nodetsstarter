@@ -73,7 +73,7 @@ export default class UserRepository extends BaseRepository<UserModel> {
     }
   }
 
-  public async isRegistered(email: string): Promise<boolean> {
+  public async isRegistered(email: string): Promise<{ _id: string } | null> {
     try {
       return await User.exists({ email });
     } catch (err) {

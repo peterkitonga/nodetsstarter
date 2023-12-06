@@ -12,4 +12,11 @@ const schema = new Schema<PasswordResetModel>(
   },
 );
 
+schema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    delete returnedObject.updatedAt;
+    delete returnedObject.__v;
+  },
+});
+
 export default model<PasswordResetModel>('PasswordReset', schema);

@@ -38,7 +38,11 @@ export default class RefreshTokenRepository extends BaseRepository<RefreshTokenM
 
   public async findByIdAndDelete(id: string): Promise<RefreshTokenModel | null> {
     try {
-      return await RefreshToken.findByIdAndDelete(id);
+      const refreshToken = await RefreshToken.findById(id);
+
+      await refreshToken!.deleteOne();
+
+      return refreshToken;
     } catch (err) {
       throw err;
     }

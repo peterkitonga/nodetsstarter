@@ -103,11 +103,10 @@ export default class AuthService {
 
   public async activateUser(code: string): Promise<AppResponse<Partial<UserModel>>> {
     try {
-      const isValidCode = await this.saltRepository.findBySalt(code);
+      const currentSalt = await this.saltRepository.findBySalt(code);
 
-      if (isValidCode) {
-        const currentSalt = isValidCode;
-        const user = await this.userRepository.findById(currentSalt.user);
+      if (currentSalt) {
+        const user = currentSalt.user as UserModel;
 
         if (user!.isActivated) {
           throw new ForbiddenError(`User account with activation code '${code}' is already activated.`);
@@ -185,7 +184,7 @@ export default class AuthService {
 
         if (isValidToken) {
           const existingToken = await this.refreshTokenRepository.findByIdAndDelete(decodedToken.token);
-          const authUser = await this.userRepository.findById(existingToken!.user);
+          const authUser = existingToken!.user as UserModel;
 
           await this.saltRepository.delete('salt', decodedToken.salt);
 
