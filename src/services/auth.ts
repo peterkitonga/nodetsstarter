@@ -67,16 +67,16 @@ export default class AuthService {
             let generatedTokens: AppResponse<Partial<TokenResponse>>;
 
             if (rememberMe) {
-              generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 720 });
+              generatedTokens = await this.generateTokens({ userId: user!._id.toString(), duration: 720 });
             } else {
-              generatedTokens = await this.generateTokens({ user_id: user!._id.toString(), duration: 24 });
+              generatedTokens = await this.generateTokens({ userId: user!._id.toString(), duration: 24 });
             }
 
             return {
               status: 'success',
               data: {
                 token: generatedTokens.data!.token!,
-                refresh_token: generatedTokens.data!.refresh_token!,
+                refreshToken: generatedTokens.data!.refreshToken!,
                 lifetime: configs.app.auth.jwt.lifetime,
                 auth: {
                   name,
@@ -176,10 +176,10 @@ export default class AuthService {
 
   public async refreshToken(encryptedToken: string): Promise<AppResponse<Partial<TokenResponse>>> {
     try {
-      const isDecodedToken = jwt.verify(encryptedToken, configs.app.auth.jwt.secret);
+      const verifiedDecodedToken = jwt.verify(encryptedToken, configs.app.auth.jwt.secret);
 
-      if (isDecodedToken) {
-        const decodedToken = <{ token: string; duration: number; salt: string }>isDecodedToken;
+      if (verifiedDecodedToken) {
+        const decodedToken = <{ token: string; duration: number; salt: string }>verifiedDecodedToken;
         const isValidToken = await this.saltRepository.isValid(decodedToken.salt);
 
         if (isValidToken) {
@@ -189,7 +189,7 @@ export default class AuthService {
           await this.saltRepository.delete('salt', decodedToken.salt);
 
           const generatedTokens = await this.generateTokens({
-            user_id: authUser!._id.toString(),
+            userId: authUser!._id.toString(),
             duration: decodedToken.duration,
           });
 
@@ -197,7 +197,7 @@ export default class AuthService {
             status: 'success',
             data: {
               token: generatedTokens.data!.token,
-              refresh_token: generatedTokens.data!.refresh_token,
+              refreshToken: generatedTokens.data!.refreshToken,
               lifetime: decodedToken.duration.toString(),
             },
           };
@@ -249,9 +249,9 @@ export default class AuthService {
     }
   }
 
-  public async updateAvatar({ user_id, url }: Record<'user_id' | 'url', string>): Promise<AppResponse<Partial<UserModel>>> {
+  public async updateAvatar({ userId, url }: Record<'userId' | 'url', string>): Promise<AppResponse<Partial<UserModel>>> {
     try {
-      const updatedUser = await this.userRepository.update('_id', user_id, { avatar: url });
+      const updatedUser = await this.userRepository.update('_id', userId, { avatar: url });
       const { name, email, avatar, isActivated, createdAt } = updatedUser;
 
       return {
@@ -263,11 +263,11 @@ export default class AuthService {
     }
   }
 
-  public async updatePassword({ user_id, password }: Record<'user_id' | 'password', string>): Promise<AppResponse<null>> {
+  public async updatePassword({ userId, password }: Record<'userId' | 'password', string>): Promise<AppResponse<null>> {
     try {
       const hashedPassword = await bcrypt.hash(password!, 12);
 
-      await this.userRepository.update('_id', user_id, { password: hashedPassword });
+      await this.userRepository.update('_id', userId, { password: hashedPassword });
 
       return {
         status: 'success',
@@ -292,11 +292,11 @@ export default class AuthService {
     }
   }
 
-  private async createRefreshToken({ user_id, duration }: { user_id: string; duration: number }): Promise<AppResponse<RefreshTokenModel>> {
+  private async createRefreshToken({ userId, duration }: { userId: string; duration: number }): Promise<AppResponse<RefreshTokenModel>> {
     try {
       const additionalTime = 3600 * duration * 1000;
       const newRefreshToken = await this.refreshTokenRepository.create({
-        user: user_id,
+        user: userId,
         expiresAt: new Date(Date.now() + additionalTime).toString(),
       });
 
@@ -306,14 +306,14 @@ export default class AuthService {
     }
   }
 
-  private async generateTokens({ user_id, duration }: { user_id: string; duration: number }): Promise<AppResponse<Partial<TokenResponse>>> {
+  private async generateTokens({ userId, duration }: { userId: string; duration: number }): Promise<AppResponse<Partial<TokenResponse>>> {
     try {
       const buffer = crypto.randomBytes(64);
       const salt = buffer.toString('hex');
 
-      await this.saltRepository.create({ salt, user: user_id });
+      await this.saltRepository.create({ salt, user: userId });
 
-      const newToken = await this.createRefreshToken({ user_id, duration });
+      const newToken = await this.createRefreshToken({ userId, duration });
       const refreshToken = jwt.sign(
         {
           token: newToken.data!._id.toString(),
@@ -326,14 +326,14 @@ export default class AuthService {
 
       const token = jwt.sign(
         {
-          auth: user_id,
+          auth: userId,
           salt,
         },
         configs.app.auth.jwt.secret,
         { expiresIn: Number(configs.app.auth.jwt.lifetime) },
       );
 
-      return { status: 'success', data: { token, refresh_token: refreshToken } };
+      return { status: 'success', data: { token, refreshToken } };
     } catch (err) {
       throw err;
     }

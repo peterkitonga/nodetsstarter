@@ -43,7 +43,7 @@ export default class AuthController {
       let maxAge: number;
       const request = req.body;
       const authentication = await this.authService.authenticateUser(request);
-      const { token, refresh_token, lifetime, auth } = authentication.data!;
+      const { token, refreshToken, lifetime, auth } = authentication.data!;
 
       if (request.rememberMe) {
         maxAge = 3600 * 720 * 1000; // 30 days
@@ -51,7 +51,7 @@ export default class AuthController {
         maxAge = 3600 * 24 * 1000; // 24 hours
       }
 
-      res.cookie('refresh_token', refresh_token, {
+      res.cookie('refreshToken', refreshToken, {
         maxAge,
         httpOnly: true,
       });
@@ -105,11 +105,11 @@ export default class AuthController {
   @Autobind
   public async refreshToken(req: Request, res: Response<AppResponse<Partial<TokenResponse>>>, next: NextFunction): Promise<void> {
     try {
-      if (req.cookies && req.cookies.refresh_token) {
-        const refreshToken = await this.authService.refreshToken(req.cookies.refresh_token);
-        const { token, refresh_token, lifetime } = refreshToken.data!;
+      if (req.cookies && req.cookies.refreshToken) {
+        const generatedToken = await this.authService.refreshToken(req.cookies.refreshToken);
+        const { token, refreshToken, lifetime } = generatedToken.data!;
 
-        res.cookie('refresh_token', refresh_token, {
+        res.cookie('refreshToken', refreshToken, {
           maxAge: 3600 * Number(lifetime) * 1000,
           httpOnly: true,
         });
@@ -156,7 +156,7 @@ export default class AuthController {
       }
 
       const storeFile = await this.fileStorageService.storeFile(request.file);
-      const updateAvatar = await this.authService.updateAvatar({ user_id: req.auth!, url: storeFile.data! });
+      const updateAvatar = await this.authService.updateAvatar({ userId: req.auth!, url: storeFile.data! });
 
       res.status(HttpStatusCodes.OK).json(updateAvatar);
     } catch (err) {
@@ -168,7 +168,7 @@ export default class AuthController {
   public async updatePassword(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
-      const updatePassword = await this.authService.updatePassword({ user_id: req.auth!, password: request.password });
+      const updatePassword = await this.authService.updatePassword({ userId: req.auth!, password: request.password });
 
       res.status(HttpStatusCodes.OK).json(updatePassword);
     } catch (err) {
@@ -179,10 +179,10 @@ export default class AuthController {
   @Autobind
   public async logoutUser(req: Request, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
-      if (req.cookies && req.cookies.refresh_token) {
-        const logoutUser = await this.authService.logoutUser({ salt: req.salt!, token: req.cookies.refresh_token });
+      if (req.cookies && req.cookies.refreshToken) {
+        const logoutUser = await this.authService.logoutUser({ salt: req.salt!, token: req.cookies.refreshToken });
 
-        res.clearCookie('refresh_token', { httpOnly: true });
+        res.clearCookie('refreshToken', { httpOnly: true });
         res.status(HttpStatusCodes.OK).json(logoutUser);
       } else {
         throw new ForbiddenError(`Logout failed. Refresh token missing.`);
