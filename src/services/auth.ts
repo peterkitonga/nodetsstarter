@@ -43,7 +43,6 @@ export default class AuthService {
         await this.saltRepository.create({ salt, user: newUser._id });
 
         return {
-          status: 'success',
           data: {
             salt,
           },
@@ -73,7 +72,6 @@ export default class AuthService {
             }
 
             return {
-              status: 'success',
               data: {
                 token: generatedTokens.data!.token!,
                 refreshToken: generatedTokens.data!.refreshToken!,
@@ -117,7 +115,6 @@ export default class AuthService {
           await this.saltRepository.delete('salt', currentSalt.salt);
 
           return {
-            status: 'success',
             data: {
               name,
               email,
@@ -143,7 +140,7 @@ export default class AuthService {
 
         await this.passwordResetRepository.create({ email, token });
 
-        return { status: 'success', data: { email, token } };
+        return { data: { email, token } };
       } else {
         throw new NotFoundError(`User with email '${email}' does not exist.`);
       }
@@ -165,7 +162,7 @@ export default class AuthService {
         await this.saltRepository.delete('user', updatedUser!._id, 'many');
         await this.refreshTokenRepository.delete('user', updatedUser!._id, 'many');
 
-        return { status: 'success', data: { email } };
+        return { data: { email } };
       } else {
         throw new NotFoundError(`Password reset token '${token}' does not exist.`);
       }
@@ -194,7 +191,6 @@ export default class AuthService {
           });
 
           return {
-            status: 'success',
             data: {
               token: generatedTokens.data!.token,
               refreshToken: generatedTokens.data!.refreshToken,
@@ -222,7 +218,6 @@ export default class AuthService {
       const { name, email, avatar, isActivated, createdAt } = user!;
 
       return {
-        status: 'success',
         data: { name, email, avatar, isActivated: isActivated, createdAt: createdAt },
       };
     } catch (err) {
@@ -235,7 +230,6 @@ export default class AuthService {
       const updatedUser = await this.userRepository.update('_id', userId, { name, email });
 
       return {
-        status: 'success',
         data: {
           name: updatedUser.name,
           email: updatedUser.email,
@@ -255,7 +249,6 @@ export default class AuthService {
       const { name, email, avatar, isActivated, createdAt } = updatedUser;
 
       return {
-        status: 'success',
         data: { name, email, avatar, isActivated, createdAt },
       };
     } catch (err) {
@@ -270,7 +263,6 @@ export default class AuthService {
       await this.userRepository.update('_id', userId, { password: hashedPassword });
 
       return {
-        status: 'success',
         message: 'Successfully updated password.',
       };
     } catch (err) {
@@ -286,7 +278,7 @@ export default class AuthService {
       await this.saltRepository.delete('salt', salt);
       await this.refreshTokenRepository.findByIdAndDelete(decodedToken.token);
 
-      return { status: 'success', message: 'Successfully logged out.' };
+      return { message: 'Successfully logged out.' };
     } catch (err) {
       throw err;
     }
@@ -300,7 +292,7 @@ export default class AuthService {
         expiresAt: new Date(Date.now() + additionalTime).toString(),
       });
 
-      return { status: 'success', data: newRefreshToken };
+      return { data: newRefreshToken };
     } catch (err) {
       throw err;
     }
@@ -333,7 +325,7 @@ export default class AuthService {
         { expiresIn: Number(configs.app.auth.jwt.lifetime) },
       );
 
-      return { status: 'success', data: { token, refreshToken } };
+      return { data: { token, refreshToken } };
     } catch (err) {
       throw err;
     }

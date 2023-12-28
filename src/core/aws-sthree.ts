@@ -36,7 +36,6 @@ class SThreeClient {
       );
 
       return {
-        status: 'success',
         message: `Successfully uploaded '${fileName}' to AWS S3 bucket '${this.bucketName}'`,
       };
     } catch (err) {
@@ -54,7 +53,6 @@ class SThreeClient {
       );
 
       return {
-        status: 'success',
         message: `Successfully deleted '${fileName}' from AWS S3 bucket '${this.bucketName}'`,
       };
     } catch (err) {

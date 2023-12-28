@@ -12,7 +12,7 @@ class MongooseConnect {
     try {
       await connect(configs.database.uri());
 
-      return { status: 'success', message: 'MONGO CONNECTED!' };
+      return { message: 'MONGO CONNECTED!' };
     } catch (err) {
       throw err;
     }
@@ -22,7 +22,7 @@ class MongooseConnect {
     try {
       await connection.close(false);
 
-      return { status: 'success', message: 'MONGO DISCONNECTED!' };
+      return { message: 'MONGO DISCONNECTED!' };
     } catch (err) {
       throw err;
     }
