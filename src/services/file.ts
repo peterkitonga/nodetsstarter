@@ -60,7 +60,7 @@ export default class FileStorageService {
       await writeFile(filePath, base64File!, { encoding: 'base64' });
       await symlink(absoluteTarget, absolutePath);
 
-      return { status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` };
+      return { data: `${configs.filesystems.providers.local.url}/${fileName}` };
     } catch (err) {
       throw err;
     }
@@ -73,7 +73,7 @@ export default class FileStorageService {
       await unlink(publicPath(`storage/${fileName}`));
       await unlink(filePath);
 
-      return { status: 'success', data: `${configs.filesystems.providers.local.url}/${fileName}` };
+      return { data: `${configs.filesystems.providers.local.url}/${fileName}` };
     } catch (err) {
       throw err;
     }
@@ -87,7 +87,6 @@ export default class FileStorageService {
       await SThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'));
 
       return {
-        status: 'success',
         data: `${bucketEndpoint}/${bucketName}/${fileName}`,
       };
     } catch (err) {
@@ -102,7 +101,6 @@ export default class FileStorageService {
     try {
       await SThreeClient.deleteFromBucket(fileName);
       return {
-        status: 'success',
         data: `${bucketEndpoint}/${bucketName}/${fileName}`,
       };
     } catch (err) {

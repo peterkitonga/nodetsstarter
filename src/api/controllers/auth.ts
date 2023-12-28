@@ -29,7 +29,6 @@ export default class AuthController {
       await this.mailerService.sendWelcomeEmail(request.email, registration.data!.salt!);
 
       res.status(HttpStatusCodes.CREATED).json({
-        status: 'success',
         message: `Successfully registered. Please check your email '${request.email}' for the activation link.`,
       });
     } catch (err) {
@@ -55,7 +54,7 @@ export default class AuthController {
         maxAge,
         httpOnly: true,
       });
-      res.status(HttpStatusCodes.OK).json({ status: 'success', data: { token, lifetime, auth } });
+      res.status(HttpStatusCodes.OK).json({ data: { token, lifetime, auth } });
     } catch (err) {
       next(err);
     }
@@ -67,7 +66,7 @@ export default class AuthController {
       const request = req.params;
       const activation = await this.authService.activateUser(request.code);
 
-      res.status(HttpStatusCodes.OK).json({ status: 'status', message: `User with email '${activation.data!.email}' successfully activated.` });
+      res.status(HttpStatusCodes.OK).json({ message: `User with email '${activation.data!.email}' successfully activated.` });
     } catch (err) {
       next(err);
     }
@@ -81,7 +80,7 @@ export default class AuthController {
 
       await this.mailerService.sendResetPasswordEmail(request.email!, reset.data!.token!);
 
-      res.status(HttpStatusCodes.CREATED).json({ status: 'status', message: `A password reset link has been sent to '${request.email}'.` });
+      res.status(HttpStatusCodes.CREATED).json({ message: `A password reset link has been sent to '${request.email}'.` });
     } catch (err) {
       next(err);
     }
@@ -94,7 +93,6 @@ export default class AuthController {
       const resetPassword = await this.authService.resetPassword({ token, password });
 
       res.status(HttpStatusCodes.OK).json({
-        status: 'status',
         message: `Password for '${resetPassword!.data!.email}' has been reset successfully.`,
       });
     } catch (err) {
@@ -113,7 +111,7 @@ export default class AuthController {
           maxAge: 3600 * Number(lifetime) * 1000,
           httpOnly: true,
         });
-        res.status(HttpStatusCodes.CREATED).json({ status: 'success', data: { token, lifetime: configs.app.auth.jwt.lifetime } });
+        res.status(HttpStatusCodes.CREATED).json({ data: { token, lifetime: configs.app.auth.jwt.lifetime } });
       } else {
         throw new UnauthorizedError(`Authentication failed. Please login.`);
       }

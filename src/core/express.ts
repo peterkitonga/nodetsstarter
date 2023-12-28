@@ -106,7 +106,6 @@ class ExpressApp {
   public handleNonExistingRoute(): void {
     this.app.use((req: Request, res: Response) => {
       res.status(HttpStatusCodes.NOT_FOUND).json({
-        status: 'error',
         message: `Route: '${req.path}' not found`,
       });
     });
@@ -124,7 +123,7 @@ class ExpressApp {
         assignedStatusCode = statusCode;
       }
 
-      res.status(assignedStatusCode).json({ status: 'error', message, data });
+      res.status(assignedStatusCode).json({ message, data });
     });
   }
 

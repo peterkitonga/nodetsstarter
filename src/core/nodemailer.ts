@@ -39,7 +39,7 @@ class Mailer {
       };
       const mailResponse = await this.transporter.sendMail(mailOptions);
 
-      return { status: 'success', message: mailResponse.response };
+      return { message: mailResponse.response };
     } catch (err) {
       throw err;
     }
@@ -54,7 +54,7 @@ class Mailer {
        */
       const data = await ejs.renderFile(viewPath(`emails/${view}.ejs`), dataOptions);
 
-      return { status: 'success', data };
+      return { data };
     } catch (err) {
       throw err;
     }
