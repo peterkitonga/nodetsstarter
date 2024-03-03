@@ -25,8 +25,10 @@
 - [x] Continuous integration with TravisCI
 - [x] Coverage reports with istanbul & Coveralls
 - [x] Switch to JEST for unit tests
-- [ ] Dependency injection for the service layer
+- [x] Dependency injection for the service layer
 - [x] Containerized setup with docker-compose
+- [ ] Jest unit tests with full coverage
+- [ ] OpenAPI setup for api documentation
 
 ## Folder structure
 
