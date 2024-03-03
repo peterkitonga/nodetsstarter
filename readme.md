@@ -58,6 +58,7 @@
     |-- tools/                    
     |   |-- docker/               # Dockerfiles for custom images
     |   |-- nginx/                # Configuration files for the nginx reverse proxy
+    |   |-- postman/              # Postman collection with example API requests
     |-- views/                    # Templates for emails & pdf files(e.g. invoices)
     |-- .env.example              # Local environment config sample
     
@@ -169,6 +170,10 @@ To format code with linting rules, run
 ```bash
   npm run lint:format
 ```
+
+## Sample Requests
+
+A sample of API requests you can perform has been provided in the `tools/postman` directory. You can import the postman collection provided to get started with dummy data.
 
 ## Authors
 
