@@ -78,7 +78,7 @@ class ExpressApp {
   }
 
   public setupCors(): void {
-    this.app.use(cors({ origin: true, credentials: true }));
+    this.app.use(cors({ origin: process.env.APP_ALLOWED_ORIGINS!.split(','), credentials: true, preflightContinue: true, exposedHeaders: ['Set-Cookie'] }));
   }
 
   public setupHelmet(): void {
@@ -106,7 +106,7 @@ class ExpressApp {
   public handleNonExistingRoute(): void {
     this.app.use((req: Request, res: Response) => {
       res.status(HttpStatusCodes.NOT_FOUND).json({
-        message: `Route: '${req.path}' not found`,
+        message: `${req.method} route for '${req.path}' not found`,
       });
     });
   }
