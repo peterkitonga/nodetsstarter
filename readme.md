@@ -146,7 +146,7 @@ Tests are written in Mocha, Chai under the `test` directory and uses `istanbul` 
 To run and view coverage reports for the tests, you will need to run two scripts in sequential order
 
 ```bash
-  npm run test:coverage ; npm run test:view
+  npm test ; npm run test:view
 ```
 
 Tests can also be run with docker using the npm docker "utility" service provided. Run this with
