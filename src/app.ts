@@ -1,3 +1,8 @@
+import 'reflect-metadata';
+import { Container } from 'typedi';
+
 import ExpressApp from '@src/core/express';
 
-ExpressApp.init();
+const expressApp = Container.get(ExpressApp);
+
+expressApp.init();

@@ -1,9 +1,11 @@
+import { Service } from 'typedi';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 import configs from '@src/configs';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
-class SThreeClient {
+@Service()
+export default class SThreeClient {
   private client: S3Client;
   private readonly bucketName: string;
 
@@ -60,5 +62,3 @@ class SThreeClient {
     }
   }
 }
-
-export default new SThreeClient();

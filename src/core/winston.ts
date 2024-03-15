@@ -1,12 +1,14 @@
+import { Service } from 'typedi';
 import { createLogger, format, Logger, transports } from 'winston';
 
 import configs from '@src/configs';
 import { storagePath } from '@src/utils/path';
 
-class WinstonLogger {
+@Service()
+export default class WinstonLogger {
   private logger: Logger;
 
-  public constructor() {
+  constructor() {
     this.logger = createLogger({
       level: configs.logging.level,
       format: format.combine(
@@ -38,5 +40,3 @@ class WinstonLogger {
     this.logger.error(message);
   }
 }
-
-export default new WinstonLogger();

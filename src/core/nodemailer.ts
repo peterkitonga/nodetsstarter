@@ -1,4 +1,5 @@
 import ejs from 'ejs';
+import { Service } from 'typedi';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { createTransport, SendMailOptions, Transporter } from 'nodemailer';
 
@@ -6,10 +7,11 @@ import configs from '@src/configs';
 import { viewPath } from '@src/utils/path';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
-class Mailer {
+@Service()
+export default class Mailer {
   private transporter: Transporter;
 
-  public constructor() {
+  constructor() {
     /**
      * Required type casting: SMTPTransport.Options,
      * otherwise will default to TransportOptions type
@@ -60,5 +62,3 @@ class Mailer {
     }
   }
 }
-
-export default new Mailer();

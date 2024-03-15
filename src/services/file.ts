@@ -9,6 +9,10 @@ import { AppResponse } from '@src/shared/interfaces/responses';
 
 @Service()
 export default class FileStorageService {
+  public constructor(private sThreeClient: SThreeClient) {
+    //
+  }
+
   public async storeFile(base64String: string): Promise<AppResponse<string>> {
     try {
       const storageProvider = configs.filesystems.provider;
@@ -84,7 +88,7 @@ export default class FileStorageService {
     const bucketEndpoint = configs.filesystems.providers.s3.endpoint;
 
     try {
-      await SThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'));
+      await this.sThreeClient.saveToBucket(fileName, fileType, Buffer.from(base64File!, 'base64'));
 
       return {
         data: `${bucketEndpoint}/${bucketName}/${fileName}`,
@@ -99,7 +103,7 @@ export default class FileStorageService {
     const bucketEndpoint = configs.filesystems.providers.s3.endpoint;
 
     try {
-      await SThreeClient.deleteFromBucket(fileName);
+      await this.sThreeClient.deleteFromBucket(fileName);
       return {
         data: `${bucketEndpoint}/${bucketName}/${fileName}`,
       };
