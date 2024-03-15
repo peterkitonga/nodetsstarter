@@ -8,8 +8,8 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   verbose: true,
   collectCoverage: true,
-  coverageDirectory: 'coverage/',
-  collectCoverageFrom: ['<rootDir>/src/**/*.{js,ts,tsx}', '!src/app.ts'],
+  coverageDirectory: 'tests/coverage/',
+  collectCoverageFrom: ['<rootDir>/src/**/*.{js,ts,tsx}', '!src/app.ts', '!src/@types/**/*'],
   moduleNameMapper: {
     '@src/(.*)$': '<rootDir>/src/$1',
     '@tests/(.*)$': '<rootDir>/tests/$1',
