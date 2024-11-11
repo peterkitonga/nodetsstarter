@@ -1,14 +1,7 @@
-const mockWinstonInfo = jest.fn();
-const mockWinstonError = jest.fn();
+import 'reflect-metadata';
+import { Container } from 'typedi';
 
-jest.mock('../../../src/core/winston', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(() => {
-      return { info: mockWinstonInfo };
-    }),
-  };
-});
+jest.mock('../../../src/core/winston');
 jest.mock('../../../src/core/mongoose');
 
 import ExpressApp from '@src/core/express';
@@ -23,18 +16,27 @@ describe('src/core/express.ts', () => {
   describe('connectDatabase()', () => {
     it('should log success message after successful connection', () => {
       const sampleSuccessMessage = 'SUCCESS MESSAGE';
-
-      // jest.spyOn(WinstonLogger.prototype, 'info');
-      jest.spyOn(MongooseConnect.prototype, 'connect').mockResolvedValue({
+      const mockWinstonInfo = jest.fn().mockReturnValueOnce(null);
+      const mockMongooseConnect = jest.fn().mockResolvedValue({
         message: sampleSuccessMessage,
       });
-      jest.spyOn(ExpressApp.prototype, 'listen').mockReturnValueOnce();
 
-      new ExpressApp(new MongooseConnect(), new WinstonLogger()).connectDatabase();
+      Container.set(WinstonLogger, {
+        info: mockWinstonInfo,
+      });
+      Container.set(MongooseConnect, {
+        connect: mockMongooseConnect,
+      });
 
-      expect(MongooseConnect.prototype.connect).toHaveBeenCalled();
-      // expect(WinstonLogger.prototype.info).toHaveBeenCalled();
-      expect(mockWinstonInfo).toBeCalledWith(sampleSuccessMessage);
+      const ExpressAppInstance = Container.get(ExpressApp);
+      const WinstonLoggerInstance = Container.get(WinstonLogger);
+      const MongooseConnectInstance = Container.get(MongooseConnect);
+
+      ExpressAppInstance.listen = jest.fn().mockReturnValueOnce(null);
+      ExpressAppInstance.connectDatabase();
+
+      expect(MongooseConnectInstance.connect).toHaveBeenCalled();
+      expect(WinstonLoggerInstance.info).toBeCalledWith(sampleSuccessMessage);
     });
   });
 });
