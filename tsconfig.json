@@ -14,10 +14,12 @@
       "@tests/*": ["tests/*"]
     },
     "typeRoots": ["src/@types/"],
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],

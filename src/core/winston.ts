@@ -24,19 +24,19 @@ export default class WinstonLogger {
     this.extendTransports();
   }
 
-  public extendTransports(): void {
-    if (configs.app.env !== 'production') {
-      this.logger.add(new transports.Console({ format: format.combine(format.colorize(), format.simple()) }));
-    } else {
-      this.logger.add(new transports.File({ filename: storagePath('logs/combined.log') }));
-    }
-  }
-
   public info(message: string): void {
     this.logger.info(message);
   }
 
   public error(message: string): void {
     this.logger.error(message);
+  }
+
+  private extendTransports(): void {
+    if (configs.app.env !== 'production') {
+      this.logger.add(new transports.Console({ format: format.combine(format.colorize(), format.simple()) }));
+    } else {
+      this.logger.add(new transports.File({ filename: storagePath('logs/combined.log') }));
+    }
   }
 }

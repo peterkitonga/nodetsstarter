@@ -18,4 +18,5 @@ module.exports = {
     '\\.[jt]sx?$': ['ts-jest', { tsconfig: '<rootDir>/tests/tsconfig.json' }],
   },
   setupFiles: ['dotenv/config'],
+  setupFilesAfterEnv: ['reflect-metadata'],
 };
