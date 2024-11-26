@@ -54,8 +54,15 @@ export default class ExpressApp {
       })
       .catch((err: Error) => {
         this.winstonLogger.error(`MONGO ERROR! ${err.message}`);
-        this.gracefulShutdown();
+        this.disconnectDatabase();
       });
+  }
+
+  public disconnectDatabase(): void {
+    this.mongooseConnect
+      .disconnect()
+      .then((res) => this.winstonLogger.info(res.message!))
+      .catch((err: Error) => this.winstonLogger.error(err.message));
   }
 
   public listen(): void {
@@ -132,10 +139,7 @@ export default class ExpressApp {
     return this.server!.close(() => {
       this.winstonLogger.info('Server shutdown successfully!');
 
-      this.mongooseConnect
-        .disconnect()
-        .then((res) => this.winstonLogger.info(res.message!))
-        .catch((err: Error) => this.winstonLogger.error(err.message));
+      this.disconnectDatabase();
     });
   }
 }
