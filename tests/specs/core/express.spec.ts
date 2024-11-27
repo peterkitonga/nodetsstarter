@@ -6,8 +6,12 @@ import { Container } from 'typedi';
 import ExpressApp from '@src/core/express';
 import WinstonLogger from '@src/core/winston';
 import MongooseConnect from '@src/core/mongoose';
+import { publicPath } from '@src/utils/path';
 
 jest.mock('cors');
+jest.mock('express', () => {
+  return require('jest-express');
+});
 
 describe('src/core/express.ts', () => {
   const flushPromises = () => new Promise(process.nextTick);
@@ -178,19 +182,37 @@ describe('src/core/express.ts', () => {
   describe('serveStaticFiles()', () => {
     it('should fetch static files from the public folder', () => {
       const mockPathJoin = jest.spyOn(path, 'join');
-      const mockExpressStatic = jest.spyOn(express, 'static').mockReturnThis();
-
-      express.prototype.use = jest.fn();
-
       const ExpressAppInstance = Container.get(ExpressApp);
 
       ExpressAppInstance.serveStaticFiles();
 
-      const pathJoinArguments = mockPathJoin.mock.calls.pop();
-
-      expect(mockExpressStatic).toHaveBeenCalled();
       expect(mockPathJoin).toHaveBeenCalled();
-      expect(pathJoinArguments).toContain('../../public');
+      expect(mockPathJoin.mock.calls.pop()).toContain('../../public');
+    });
+
+    it('should pass static files from the public folder to express', () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.serveStaticFiles();
+
+      expect(express.static).toHaveBeenCalledWith(publicPath());
+    });
+  });
+
+  describe('setupCors()', () => {
+    it('should setup CORS rules', () => {
+      const mockCors = jest.mocked(cors);
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.setupCors();
+
+      expect(mockCors).toHaveBeenCalled();
+      expect(mockCors.mock.calls[0].pop()).toEqual({
+        origin: process.env.APP_ALLOWED_ORIGINS!.split(','),
+        credentials: true,
+        preflightContinue: true,
+        exposedHeaders: ['Set-Cookie'],
+      });
     });
   });
 });
