@@ -196,6 +196,7 @@ describe('src/core/express.ts', () => {
       ExpressAppInstance.serveStaticFiles();
 
       expect(express.static).toHaveBeenCalledWith(publicPath());
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
     });
   });
 
@@ -213,6 +214,98 @@ describe('src/core/express.ts', () => {
         preflightContinue: true,
         exposedHeaders: ['Set-Cookie'],
       });
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('listen()', () => {
+    it('should setup the application server', () => {
+      Container.set(WinstonLogger, {
+        info: jest.fn(),
+      });
+
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.listen();
+
+      expect(ExpressAppInstance['app'].listen).toHaveBeenCalled();
+    });
+
+    it('should log message after the application server starts', () => {
+      const mockWinstonInfo = jest.fn();
+      Container.set(WinstonLogger, {
+        info: mockWinstonInfo,
+      });
+
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.listen();
+
+      expect(mockWinstonInfo).toHaveBeenCalled();
+    });
+
+    it('should trigger graceful shutdown on process SIGTERM', () => {
+      jest.useFakeTimers();
+
+      const processEvents = {} as { [key: string]: (...args: any[]) => void };
+
+      // @ts-ignore
+      jest.spyOn(process, 'on').mockImplementation((signal: string | symbol, cb: (...args: any[]) => void) => {
+        processEvents[signal as string] = cb;
+      });
+
+      // @ts-ignore
+      jest.spyOn(process, 'kill').mockImplementation((pid: number, signal?: string | number) => {
+        return processEvents[signal!]();
+      });
+
+      const mockWinstonInfo = jest.fn();
+      Container.set(WinstonLogger, {
+        info: mockWinstonInfo,
+      });
+
+      const ExpressAppInstance = Container.get(ExpressApp);
+      ExpressAppInstance.gracefulShutdown = jest.fn();
+      ExpressAppInstance.listen();
+
+      process.kill(process.pid, 'SIGTERM');
+
+      jest.runAllTimers();
+
+      expect(mockWinstonInfo).toHaveBeenCalled();
+      expect(ExpressAppInstance.gracefulShutdown).toHaveBeenCalled();
+    });
+
+    it('should trigger graceful shutdown on process SIGINT', () => {
+      jest.useFakeTimers();
+
+      const processEvents = {} as { [key: string]: (...args: any[]) => void };
+
+      // @ts-ignore
+      jest.spyOn(process, 'on').mockImplementation((signal: string | symbol, cb: (...args: any[]) => void) => {
+        processEvents[signal as string] = cb;
+      });
+
+      // @ts-ignore
+      jest.spyOn(process, 'kill').mockImplementation((pid: number, signal?: string | number) => {
+        return processEvents[signal!]();
+      });
+
+      const mockWinstonInfo = jest.fn();
+      Container.set(WinstonLogger, {
+        info: mockWinstonInfo,
+      });
+
+      const ExpressAppInstance = Container.get(ExpressApp);
+      ExpressAppInstance.gracefulShutdown = jest.fn();
+      ExpressAppInstance.listen();
+
+      process.kill(process.pid, 'SIGINT');
+
+      jest.runAllTimers();
+
+      expect(mockWinstonInfo).toHaveBeenCalled();
+      expect(ExpressAppInstance.gracefulShutdown).toHaveBeenCalled();
     });
   });
 });
