@@ -1,7 +1,9 @@
 import path from 'path';
 import cors from 'cors';
+import helmet from 'helmet';
 import express from 'express';
 import { Container } from 'typedi';
+import cookieParser from 'cookie-parser';
 
 import ExpressApp from '@src/core/express';
 import WinstonLogger from '@src/core/winston';
@@ -9,6 +11,9 @@ import MongooseConnect from '@src/core/mongoose';
 import { publicPath } from '@src/utils/path';
 
 jest.mock('cors');
+jest.mock('helmet');
+jest.mock('cookie-parser');
+jest.mock('../../../src/api/routes');
 jest.mock('express', () => {
   return require('jest-express');
 });
@@ -179,45 +184,6 @@ describe('src/core/express.ts', () => {
     });
   });
 
-  describe('serveStaticFiles()', () => {
-    it('should fetch static files from the public folder', () => {
-      const mockPathJoin = jest.spyOn(path, 'join');
-      const ExpressAppInstance = Container.get(ExpressApp);
-
-      ExpressAppInstance.serveStaticFiles();
-
-      expect(mockPathJoin).toHaveBeenCalled();
-      expect(mockPathJoin.mock.calls.pop()).toContain('../../public');
-    });
-
-    it('should pass static files from the public folder to express', () => {
-      const ExpressAppInstance = Container.get(ExpressApp);
-
-      ExpressAppInstance.serveStaticFiles();
-
-      expect(express.static).toHaveBeenCalledWith(publicPath());
-      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
-    });
-  });
-
-  describe('setupCors()', () => {
-    it('should setup CORS rules', () => {
-      const mockCors = jest.mocked(cors);
-      const ExpressAppInstance = Container.get(ExpressApp);
-
-      ExpressAppInstance.setupCors();
-
-      expect(mockCors).toHaveBeenCalled();
-      expect(mockCors.mock.calls[0].pop()).toEqual({
-        origin: process.env.APP_ALLOWED_ORIGINS!.split(','),
-        credentials: true,
-        preflightContinue: true,
-        exposedHeaders: ['Set-Cookie'],
-      });
-      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
-    });
-  });
-
   describe('listen()', () => {
     it('should setup the application server', () => {
       Container.set(WinstonLogger, {
@@ -306,6 +272,102 @@ describe('src/core/express.ts', () => {
 
       expect(mockWinstonInfo).toHaveBeenCalled();
       expect(ExpressAppInstance.gracefulShutdown).toHaveBeenCalled();
+    });
+  });
+
+  describe('serveStaticFiles()', () => {
+    it('should fetch static files from the public folder', () => {
+      const mockPathJoin = jest.spyOn(path, 'join');
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.serveStaticFiles();
+
+      expect(mockPathJoin).toHaveBeenCalled();
+      expect(mockPathJoin.mock.calls.pop()).toContain('../../public');
+    });
+
+    it('should pass static files from the public folder to express', () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.serveStaticFiles();
+
+      expect(express.static).toHaveBeenCalledWith(publicPath());
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('setupCors()', () => {
+    it('should setup CORS rules', () => {
+      const mockCors = jest.mocked(cors);
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.setupCors();
+
+      expect(mockCors).toHaveBeenCalled();
+      expect(mockCors.mock.calls[0].pop()).toEqual({
+        origin: process.env.APP_ALLOWED_ORIGINS!.split(','),
+        credentials: true,
+        preflightContinue: true,
+        exposedHeaders: ['Set-Cookie'],
+      });
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('setupHelmet()', () => {
+    it('should setup helmet', () => {
+      const mockHelmet = jest.mocked(helmet);
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.setupHelmet();
+
+      expect(mockHelmet).toHaveBeenCalled();
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('setupBodyParser()', () => {
+    it('should setup the body parser to JSON', () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.setupBodyParser();
+
+      expect(express.json).toHaveBeenCalled();
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('setupCookieParser()', () => {
+    it('should setup the cookie parser', () => {
+      const mockCookieParser = jest.mocked(cookieParser);
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.setupCookieParser();
+
+      expect(mockCookieParser).toHaveBeenCalled();
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleHomeRoute()', () => {
+    it('should setup a GET route for "/"', () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.handleHomeRoute();
+
+      expect(ExpressAppInstance['app'].get).toHaveBeenCalled();
+      expect((ExpressAppInstance['app'].get as jest.Mock).mock.calls.pop()).toContain('/');
+    });
+  });
+
+  describe('handleAppRoutes()', () => {
+    it('should setup routes with prefix "/api/v1"', () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.handleAppRoutes();
+
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+      expect((ExpressAppInstance['app'].use as jest.Mock).mock.calls.pop()).toContain('/api/v1');
     });
   });
 });
