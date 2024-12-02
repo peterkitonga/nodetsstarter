@@ -12,7 +12,7 @@
     "emitDecoratorMetadata": true
   },
   "include": [
-    "mocks/**/*.mock.ts",
+    "setup/**/*.ts",
     "specs/**/*.spec.ts",
     "../src/**/*.d.ts"
   ],

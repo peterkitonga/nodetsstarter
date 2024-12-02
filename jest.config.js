@@ -3,7 +3,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src/', '<rootDir>/tests/specs'],
+  roots: ['<rootDir>/tests/specs'],
   testRegex: '(/__test__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   verbose: true,
@@ -17,6 +17,6 @@ module.exports = {
   transform: {
     '\\.[jt]sx?$': ['ts-jest', { tsconfig: '<rootDir>/tests/tsconfig.json' }],
   },
-  setupFiles: ['dotenv/config'],
+  setupFiles: ['dotenv/config', '<rootDir>/tests/setup/env-vars.ts'],
   setupFilesAfterEnv: ['reflect-metadata'],
 };
