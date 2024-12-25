@@ -25,8 +25,10 @@
 - [x] Continuous integration with TravisCI
 - [x] Coverage reports with istanbul & Coveralls
 - [x] Switch to JEST for unit tests
-- [ ] Dependency injection for the service layer
+- [x] Dependency injection for the service layer
 - [x] Containerized setup with docker-compose
+- [ ] Jest unit tests with full coverage
+- [ ] OpenAPI setup for api documentation
 
 ## Folder structure
 
@@ -56,6 +58,7 @@
     |-- tools/                    
     |   |-- docker/               # Dockerfiles for custom images
     |   |-- nginx/                # Configuration files for the nginx reverse proxy
+    |   |-- postman/              # Postman collection with example API requests
     |-- views/                    # Templates for emails & pdf files(e.g. invoices)
     |-- .env.example              # Local environment config sample
     
@@ -143,7 +146,7 @@ Tests are written in Mocha, Chai under the `test` directory and uses `istanbul` 
 To run and view coverage reports for the tests, you will need to run two scripts in sequential order
 
 ```bash
-  npm run test:coverage ; npm run test:view
+  npm test ; npm run test:view
 ```
 
 Tests can also be run with docker using the npm docker "utility" service provided. Run this with
@@ -167,6 +170,10 @@ To format code with linting rules, run
 ```bash
   npm run lint:format
 ```
+
+## Sample Requests
+
+A sample of API requests you can perform has been provided in the `tools/postman` directory. You can import the postman collection provided to get started with dummy data.
 
 ## Authors
 

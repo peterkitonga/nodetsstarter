@@ -1,6 +1,4 @@
-import { Document } from 'mongoose';
-
-export interface UserModel extends Document {
+export interface UserModel {
   _id: string;
   name: string;
   email: string;
@@ -10,21 +8,21 @@ export interface UserModel extends Document {
   createdAt?: string;
 }
 
-export interface SaltModel extends Document {
+export interface SaltModel {
   _id: string;
   salt: string;
   user: UserModel | string;
   createdAt?: string;
 }
 
-export interface PasswordResetModel extends Document {
+export interface PasswordResetModel {
   _id: string;
   email: string;
   token: string;
   createdAt?: string;
 }
 
-export interface RefreshTokenModel extends Document {
+export interface RefreshTokenModel {
   _id: string;
   user: UserModel | string;
   createdAt?: string;

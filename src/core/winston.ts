@@ -1,12 +1,14 @@
+import { Service } from 'typedi';
 import { createLogger, format, Logger, transports } from 'winston';
 
 import configs from '@src/configs';
 import { storagePath } from '@src/utils/path';
 
-class WinstonLogger {
+@Service()
+export default class WinstonLogger {
   private logger: Logger;
 
-  public constructor() {
+  constructor() {
     this.logger = createLogger({
       level: configs.logging.level,
       format: format.combine(
@@ -22,14 +24,6 @@ class WinstonLogger {
     this.extendTransports();
   }
 
-  public extendTransports(): void {
-    if (configs.app.env !== 'production') {
-      this.logger.add(new transports.Console({ format: format.combine(format.colorize(), format.simple()) }));
-    } else {
-      this.logger.add(new transports.File({ filename: storagePath('logs/combined.log') }));
-    }
-  }
-
   public info(message: string): void {
     this.logger.info(message);
   }
@@ -37,6 +31,12 @@ class WinstonLogger {
   public error(message: string): void {
     this.logger.error(message);
   }
-}
 
-export default new WinstonLogger();
+  private extendTransports(): void {
+    if (configs.app.env !== 'production') {
+      this.logger.add(new transports.Console({ format: format.combine(format.colorize(), format.simple()) }));
+    } else {
+      this.logger.add(new transports.File({ filename: storagePath('logs/combined.log') }));
+    }
+  }
+}

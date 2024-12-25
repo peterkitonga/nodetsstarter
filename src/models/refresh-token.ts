@@ -1,8 +1,10 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Model, model } from 'mongoose';
 import mongooseAutopopulate from 'mongoose-autopopulate';
 import { RefreshTokenModel } from '@src/shared/interfaces/database';
 
-const schema = new Schema<RefreshTokenModel>(
+type RefreshTokenModelType = Model<RefreshTokenModel>;
+
+const schema = new Schema<RefreshTokenModel, RefreshTokenModelType>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true, autopopulate: { maxDepth: 1, select: '-password' } },
     expiresAt: { type: Date, required: true },
@@ -22,4 +24,4 @@ schema.set('toJSON', {
   },
 });
 
-export default model<RefreshTokenModel>('RefreshToken', schema);
+export default model<RefreshTokenModel, RefreshTokenModelType>('RefreshToken', schema);

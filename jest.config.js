@@ -3,13 +3,13 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src/', '<rootDir>/tests/specs'],
+  roots: ['<rootDir>/tests/specs'],
   testRegex: '(/__test__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   verbose: true,
   collectCoverage: true,
-  coverageDirectory: 'coverage/',
-  collectCoverageFrom: ['<rootDir>/src/**/*.{js,ts,tsx}', '!src/app.ts'],
+  coverageDirectory: 'tests/coverage/',
+  collectCoverageFrom: ['<rootDir>/src/**/*.{js,ts,tsx}', '!src/app.ts', '!src/@types/**/*'],
   moduleNameMapper: {
     '@src/(.*)$': '<rootDir>/src/$1',
     '@tests/(.*)$': '<rootDir>/tests/$1',
@@ -17,5 +17,6 @@ module.exports = {
   transform: {
     '\\.[jt]sx?$': ['ts-jest', { tsconfig: '<rootDir>/tests/tsconfig.json' }],
   },
-  setupFiles: ['dotenv/config'],
+  setupFiles: ['dotenv/config', '<rootDir>/tests/setup/env-vars.ts'],
+  setupFilesAfterEnv: ['reflect-metadata'],
 };

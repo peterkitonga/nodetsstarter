@@ -1,4 +1,5 @@
 import { Service } from 'typedi';
+import { HydratedDocument } from 'mongoose';
 
 import User from '@src/models/user';
 import { BaseRepository } from '@src/repositories/base';
@@ -7,10 +8,10 @@ import { UserModel } from '@src/shared/interfaces/database';
 import NotFoundError from '@src/shared/errors/not-found';
 
 @Service()
-export default class UserRepository extends BaseRepository<UserModel> {
-  public async create(doc: Partial<UserModel>): Promise<UserModel> {
+export default class UserRepository extends BaseRepository<HydratedDocument<UserModel>> {
+  public async create(doc: Partial<UserModel>): Promise<HydratedDocument<UserModel>> {
     try {
-      const newUser = new User(doc);
+      const newUser: HydratedDocument<UserModel> = new User(doc);
 
       return await newUser.save();
     } catch (err) {
@@ -18,9 +19,9 @@ export default class UserRepository extends BaseRepository<UserModel> {
     }
   }
 
-  public async update(field: string, value: string, doc: Partial<UserModel>): Promise<UserModel> {
+  public async update(field: string, value: string, doc: Partial<UserModel>): Promise<HydratedDocument<UserModel>> {
     try {
-      let user: UserModel | null;
+      let user: HydratedDocument<UserModel> | null;
 
       if (field === '_id') {
         user = await this.findById(value);
@@ -57,7 +58,7 @@ export default class UserRepository extends BaseRepository<UserModel> {
     }
   }
 
-  public async findByEmail(email: string): Promise<UserModel | null> {
+  public async findByEmail(email: string): Promise<HydratedDocument<UserModel> | null> {
     try {
       return await User.findOne({ email });
     } catch (err) {
@@ -65,7 +66,7 @@ export default class UserRepository extends BaseRepository<UserModel> {
     }
   }
 
-  public async findById(identifier: UserModel | string): Promise<UserModel | null> {
+  public async findById(identifier: UserModel | string): Promise<HydratedDocument<UserModel> | null> {
     try {
       return await User.findById(identifier);
     } catch (err) {

@@ -6,9 +6,13 @@ import { AppResponse } from '@src/shared/interfaces/responses';
 
 @Service()
 export default class MailerService {
+  constructor(private mailer: Mailer) {
+    //
+  }
+
   public async sendWelcomeEmail(email: string, code: string): Promise<AppResponse<null>> {
     try {
-      return await Mailer.send(
+      return await this.mailer.send(
         email,
         `Welcome to ${configs.app.name}`,
         { message: 'Thank you for registering with us. Please click the link below to activate your account.', code },
@@ -21,7 +25,7 @@ export default class MailerService {
 
   public async sendResetPasswordEmail(email: string, token: string): Promise<AppResponse<null>> {
     try {
-      return await Mailer.send(
+      return await this.mailer.send(
         email,
         `${configs.app.name} reset password`,
         {

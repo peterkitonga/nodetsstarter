@@ -1,10 +1,12 @@
+import { Service } from 'typedi';
 import { connect, connection } from 'mongoose';
 
 import configs from '@src/configs';
 import { AppResponse } from '@src/shared/interfaces/responses';
 
-class MongooseConnect {
-  public constructor() {
+@Service()
+export default class MongooseConnect {
+  constructor() {
     // constructor
   }
 
@@ -28,5 +30,3 @@ class MongooseConnect {
     }
   }
 }
-
-export default new MongooseConnect();
