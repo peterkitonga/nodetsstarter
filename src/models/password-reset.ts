@@ -1,7 +1,9 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Model, model } from 'mongoose';
 import { PasswordResetModel } from '@src/shared/interfaces/database';
 
-const schema = new Schema<PasswordResetModel>(
+type PasswordResetModelType = Model<PasswordResetModel>;
+
+const schema = new Schema<PasswordResetModel, PasswordResetModelType>(
   {
     email: { type: String, required: true },
     token: { type: String, required: true },
@@ -19,4 +21,4 @@ schema.set('toJSON', {
   },
 });
 
-export default model<PasswordResetModel>('PasswordReset', schema);
+export default model<PasswordResetModel, PasswordResetModelType>('PasswordReset', schema);

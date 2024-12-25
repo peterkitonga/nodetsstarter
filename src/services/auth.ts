@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { Service } from 'typedi';
+import { HydratedDocument } from 'mongoose';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 import configs from '@src/configs';
@@ -104,7 +105,7 @@ export default class AuthService {
       const currentSalt = await this.saltRepository.findBySalt(code);
 
       if (currentSalt) {
-        const user = currentSalt.user as UserModel;
+        const user = currentSalt.user as HydratedDocument<UserModel>;
 
         if (user!.isActivated) {
           throw new ForbiddenError(`User account with activation code '${code}' is already activated.`);

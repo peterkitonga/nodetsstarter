@@ -1,7 +1,9 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Model, model } from 'mongoose';
 import { UserModel } from '@src/shared/interfaces/database';
 
-const schema = new Schema<UserModel>(
+type UserModelType = Model<UserModel>;
+
+const schema = new Schema<UserModel, UserModelType>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true },
@@ -21,4 +23,4 @@ schema.set('toJSON', {
   },
 });
 
-export default model<UserModel>('User', schema);
+export default model<UserModel, UserModelType>('User', schema);
