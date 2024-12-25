@@ -370,4 +370,69 @@ describe('src/core/express.ts', () => {
       expect((ExpressAppInstance['app'].use as jest.Mock).mock.calls.pop()).toContain('/api/v1');
     });
   });
+
+  describe('handleNonExistingRoute()', () => {
+    it('should setup a middleware for none existing routes', async () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.handleNonExistingRoute();
+
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleErrorMiddleware()', () => {
+    it('should setup a middleware for API error responses', async () => {
+      Container.set(WinstonLogger, {
+        error: jest.fn(),
+      });
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.handleErrorMiddleware();
+
+      expect(ExpressAppInstance['app'].use).toHaveBeenCalled();
+    });
+  });
+
+  describe('gracefulShutdown()', () => {
+    it('should close the server', async () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      // @ts-ignore
+      ExpressAppInstance['server'] = { close: jest.fn() };
+      ExpressAppInstance.gracefulShutdown();
+
+      expect(ExpressAppInstance['server']!.close).toHaveBeenCalled();
+    });
+  });
+
+  describe('init()', () => {
+    it('should initialize all custom middlewares', async () => {
+      const ExpressAppInstance = Container.get(ExpressApp);
+
+      ExpressAppInstance.setupBodyParser = jest.fn();
+      ExpressAppInstance.serveStaticFiles = jest.fn();
+      ExpressAppInstance.setupCors = jest.fn();
+      ExpressAppInstance.setupHelmet = jest.fn();
+      ExpressAppInstance.setupCookieParser = jest.fn();
+      ExpressAppInstance.handleHomeRoute = jest.fn();
+      ExpressAppInstance.handleAppRoutes = jest.fn();
+      ExpressAppInstance.handleNonExistingRoute = jest.fn();
+      ExpressAppInstance.handleErrorMiddleware = jest.fn();
+      ExpressAppInstance.connectDatabase = jest.fn();
+
+      ExpressAppInstance.init();
+
+      expect(ExpressAppInstance.setupBodyParser).toHaveBeenCalled();
+      expect(ExpressAppInstance.serveStaticFiles).toHaveBeenCalled();
+      expect(ExpressAppInstance.setupCors).toHaveBeenCalled();
+      expect(ExpressAppInstance.setupHelmet).toHaveBeenCalled();
+      expect(ExpressAppInstance.setupCookieParser).toHaveBeenCalled();
+      expect(ExpressAppInstance.handleHomeRoute).toHaveBeenCalled();
+      expect(ExpressAppInstance.handleAppRoutes).toHaveBeenCalled();
+      expect(ExpressAppInstance.handleNonExistingRoute).toHaveBeenCalled();
+      expect(ExpressAppInstance.handleErrorMiddleware).toHaveBeenCalled();
+      expect(ExpressAppInstance.connectDatabase).toHaveBeenCalled();
+    });
+  });
 });
