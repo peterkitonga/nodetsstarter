@@ -28,7 +28,7 @@ describe('src/core/express.ts', () => {
 
   describe('connectDatabase()', () => {
     describe('success', () => {
-      it('should log message after connecting to mongo', async () => {
+      it('should log message after connecting to mongodb', async () => {
         const sampleSuccessMessage = 'SUCCESS MESSAGE';
 
         Container.set(WinstonLogger, {
@@ -53,7 +53,7 @@ describe('src/core/express.ts', () => {
         expect(WinstonLoggerInstance.info).toHaveBeenCalledWith(sampleSuccessMessage);
       });
 
-      it('should start the application after connecting to mongo', async () => {
+      it('should start the application after connecting to mongodb', async () => {
         const sampleSuccessMessage = 'SUCCESS MESSAGE';
 
         Container.set(WinstonLogger, {
@@ -79,7 +79,7 @@ describe('src/core/express.ts', () => {
     });
 
     describe('error', () => {
-      it('should log error message when connecting mongo fails', async () => {
+      it('should log error message when connecting to mongodb fails', async () => {
         const sampleErrorMessage = 'ERROR MESSAGE';
 
         Container.set(WinstonLogger, {
@@ -104,7 +104,7 @@ describe('src/core/express.ts', () => {
         expect(WinstonLoggerInstance.error).toHaveBeenCalledWith(`MONGO ERROR! ${sampleErrorMessage}`);
       });
 
-      it('should disconnect mongo when connection fails', async () => {
+      it('should disconnect from mongodb when connection fails', async () => {
         const sampleErrorMessage = 'ERROR MESSAGE';
 
         Container.set(WinstonLogger, {
@@ -132,7 +132,7 @@ describe('src/core/express.ts', () => {
 
   describe('disconnectDatabase()', () => {
     describe('success', () => {
-      it('should log message after disconnecting mongo', async () => {
+      it('should log message after disconnecting mongodb', async () => {
         const sampleSuccessMessage = 'SUCCESS MONGO MESSAGE';
 
         Container.set(WinstonLogger, {
@@ -158,7 +158,7 @@ describe('src/core/express.ts', () => {
     });
 
     describe('error', () => {
-      it('should log message if disconnecting from mongo fails', async () => {
+      it('should log message if disconnecting from mongodb fails', async () => {
         const sampleErrorMessage = 'ERROR MONGO MESSAGE';
 
         Container.set(WinstonLogger, {

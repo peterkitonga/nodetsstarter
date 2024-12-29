@@ -57,4 +57,37 @@ describe('src/core/mongoose', () => {
       });
     });
   });
+
+  describe('disconnect()', () => {
+    describe('success', () => {
+      it('should close the connection to mongodb', async () => {
+        const mockMongooseConnectionClose = (mongoose.connection.close = jest.fn().mockResolvedValueOnce({}));
+        const MongooseConnectInstance = Container.get(MongooseConnect);
+
+        await MongooseConnectInstance.disconnect();
+
+        expect(mockMongooseConnectionClose).toHaveBeenCalled();
+        expect(mockMongooseConnectionClose.mock.calls.pop()![0]).toBeFalsy();
+      });
+
+      it('should return a response with a message', async () => {
+        mongoose.connection.close = jest.fn().mockResolvedValueOnce({});
+        const MongooseConnectInstance = Container.get(MongooseConnect);
+
+        const response = await MongooseConnectInstance.disconnect();
+
+        expect(response).toHaveProperty('message', 'MONGO DISCONNECTED!');
+      });
+    });
+
+    describe('error', () => {
+      it('should catch errors when disconnecting from mongodb', async () => {
+        mongoose.connection.close = jest.fn().mockRejectedValueOnce(new Error('SAMPLE_DISCONNECT_ERROR'));
+
+        const MongooseConnectInstance = Container.get(MongooseConnect);
+
+        await expect(MongooseConnectInstance.disconnect()).rejects.toHaveProperty('message', 'SAMPLE_DISCONNECT_ERROR');
+      });
+    });
+  });
 });
