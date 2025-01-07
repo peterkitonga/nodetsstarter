@@ -137,7 +137,7 @@ To deploy this project in production with docker, run
 
 ## Running Tests
 
-Tests are written in Mocha, Chai under the `test` directory and uses `istanbul` for coverage reports. To run tests, run the following command
+Tests are written in Jest under the `test` directory and uses `lcov` for coverage reports. To run tests, run the following command
 
 ```bash
   npm test

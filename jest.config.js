@@ -7,6 +7,7 @@ module.exports = {
   testRegex: '(/__test__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   verbose: true,
+  clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'tests/coverage/',
   collectCoverageFrom: ['<rootDir>/src/**/*.{js,ts,tsx}', '!src/app.ts', '!src/@types/**/*'],

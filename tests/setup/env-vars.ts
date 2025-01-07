@@ -2,7 +2,16 @@ import fs from 'fs';
 
 jest.spyOn(fs, 'accessSync').mockImplementation();
 
+process.env.APP_NAME = 'TEST';
+process.env.APP_PORT = '8080';
+process.env.APP_LOCALE = 'en';
+process.env.APP_TIMEZONE = 'Africa/Nairobi';
+process.env.APP_BASE_URL = 'http://127.0.0.1:8080';
 process.env.APP_ALLOWED_ORIGINS = 'http://127.0.0.1:4200,http://localhost:4200';
+
+process.env.JWT_SECRET = '12345678';
+process.env.JWT_LIFETIME = '3600';
+
 process.env.AWS_ACCESS_KEY_ID = 'SAMPLE_KEY_ID';
 process.env.AWS_ACCESS_SECRET = 'SAMPLE_ACCESS_SECRET';
 process.env.AWS_ACCESS_ENDPOINT = 'SAMPLE_ACCESS_ENDPOINT';
