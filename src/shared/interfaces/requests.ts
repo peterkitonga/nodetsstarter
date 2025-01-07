@@ -3,7 +3,7 @@ export interface AuthRequest {
   email: string;
   password: string;
   passwordConfirmation?: string;
-  rememberMe?: string;
+  rememberMe?: boolean;
 }
 
 export interface ActivationRequest {
