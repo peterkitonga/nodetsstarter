@@ -1,4 +1,4 @@
-import { Service } from 'typedi';
+import { Container, Service } from 'typedi';
 import { Request, Response, NextFunction } from 'express';
 
 import configs from '@src/configs';
@@ -16,7 +16,7 @@ import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 @Service()
 export default class AuthController {
-  constructor(private authService: AuthService, private fileStorageService: FileStorageService, private mailerService: MailerService) {
+  constructor() {
     //
   }
 
@@ -24,9 +24,9 @@ export default class AuthController {
   public async registerUser(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
-      const registration = await this.authService.registerUser(request);
+      const registration = await Container.get(AuthService).registerUser(request);
 
-      await this.mailerService.sendWelcomeEmail(request.email, registration.data!.salt!);
+      await Container.get(MailerService).sendWelcomeEmail(request.email, registration.data!.salt!);
 
       res.status(HttpStatusCodes.CREATED).json({
         message: `Successfully registered. Please check your email '${request.email}' for the activation link.`,
@@ -41,7 +41,7 @@ export default class AuthController {
     try {
       let maxAge: number;
       const request = req.body;
-      const authentication = await this.authService.authenticateUser(request);
+      const authentication = await Container.get(AuthService).authenticateUser(request);
       const { token, refreshToken, lifetime, auth } = authentication.data!;
 
       if (request.rememberMe) {
@@ -64,7 +64,7 @@ export default class AuthController {
   public async activateUser(req: Request<ActivationRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.params;
-      const activation = await this.authService.activateUser(request.code);
+      const activation = await Container.get(AuthService).activateUser(request.code);
 
       res.status(HttpStatusCodes.OK).json({ message: `User with email '${activation.data!.email}' successfully activated.` });
     } catch (err) {
@@ -76,9 +76,9 @@ export default class AuthController {
   public async sendResetLink(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
-      const reset = await this.authService.createResetToken(request.email!);
+      const reset = await Container.get(AuthService).createResetToken(request.email!);
 
-      await this.mailerService.sendResetPasswordEmail(request.email!, reset.data!.token!);
+      await Container.get(MailerService).sendResetPasswordEmail(request.email!, reset.data!.token!);
 
       res.status(HttpStatusCodes.CREATED).json({ message: `A password reset link has been sent to '${request.email}'.` });
     } catch (err) {
@@ -90,7 +90,7 @@ export default class AuthController {
   public async resetPassword(req: Request<unknown, unknown, ResetPasswordRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const { token, password } = req.body;
-      const resetPassword = await this.authService.resetPassword({ token, password });
+      const resetPassword = await Container.get(AuthService).resetPassword({ token, password });
 
       res.status(HttpStatusCodes.OK).json({
         message: `Password for '${resetPassword!.data!.email}' has been reset successfully.`,
@@ -104,7 +104,7 @@ export default class AuthController {
   public async refreshToken(req: Request, res: Response<AppResponse<Partial<TokenResponse>>>, next: NextFunction): Promise<void> {
     try {
       if (req.cookies && req.cookies.refreshToken) {
-        const generatedToken = await this.authService.refreshToken(req.cookies.refreshToken);
+        const generatedToken = await Container.get(AuthService).refreshToken(req.cookies.refreshToken);
         const { token, refreshToken, lifetime } = generatedToken.data!;
 
         res.cookie('refreshToken', refreshToken, {
@@ -123,7 +123,7 @@ export default class AuthController {
   @Autobind
   public async getUser(req: Request, res: Response<AppResponse<Partial<UserModel>>>, next: NextFunction): Promise<void> {
     try {
-      const getUser = await this.authService.getUser(req.auth!);
+      const getUser = await Container.get(AuthService).getUser(req.auth!);
 
       res.status(HttpStatusCodes.OK).json(getUser);
     } catch (err) {
@@ -135,7 +135,7 @@ export default class AuthController {
   public async updateUser(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<Partial<UserModel>>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
-      const updateUser = await this.authService.updateUser(req.auth!, request);
+      const updateUser = await Container.get(AuthService).updateUser(req.auth!, request);
 
       res.status(HttpStatusCodes.OK).json(updateUser);
     } catch (err) {
@@ -147,14 +147,14 @@ export default class AuthController {
   public async updateAvatar(req: Request<unknown, unknown, FileRequest>, res: Response<AppResponse<Partial<UserModel>>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
-      const { data } = await this.authService.getUser(req.auth!);
+      const { data } = await Container.get(AuthService).getUser(req.auth!);
 
       if (data!.avatar) {
-        await this.fileStorageService.deleteFile(data!.avatar);
+        await Container.get(FileStorageService).deleteFile(data!.avatar);
       }
 
-      const storeFile = await this.fileStorageService.storeFile(request.file);
-      const updateAvatar = await this.authService.updateAvatar({ userId: req.auth!, url: storeFile.data! });
+      const storeFile = await Container.get(FileStorageService).storeFile(request.file);
+      const updateAvatar = await Container.get(AuthService).updateAvatar({ userId: req.auth!, url: storeFile.data! });
 
       res.status(HttpStatusCodes.OK).json(updateAvatar);
     } catch (err) {
@@ -166,7 +166,7 @@ export default class AuthController {
   public async updatePassword(req: Request<unknown, unknown, AuthRequest>, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       const request = req.body;
-      const updatePassword = await this.authService.updatePassword({ userId: req.auth!, password: request.password });
+      const updatePassword = await Container.get(AuthService).updatePassword({ userId: req.auth!, password: request.password });
 
       res.status(HttpStatusCodes.OK).json(updatePassword);
     } catch (err) {
@@ -178,7 +178,7 @@ export default class AuthController {
   public async logoutUser(req: Request, res: Response<AppResponse<null>>, next: NextFunction): Promise<void> {
     try {
       if (req.cookies && req.cookies.refreshToken) {
-        const logoutUser = await this.authService.logoutUser({ salt: req.salt!, token: req.cookies.refreshToken });
+        const logoutUser = await Container.get(AuthService).logoutUser({ salt: req.salt!, token: req.cookies.refreshToken });
 
         res.clearCookie('refreshToken', { httpOnly: true });
         res.status(HttpStatusCodes.OK).json(logoutUser);
