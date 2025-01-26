@@ -7,6 +7,7 @@ import AuthService from '@src/services/auth';
 import MailerService from '@src/services/mailer';
 import { HttpStatusCodes } from '@src/shared/enums';
 import MongooseConnect from '@src/core/mongoose';
+import ForbiddenError from '@src/shared/errors/forbidden';
 
 describe('src/api/routes/auth', () => {
   configs.app.api.version = 'v2';
@@ -70,6 +71,74 @@ describe('src/api/routes/auth', () => {
         expect(mockSendWelcomeEmail).toHaveBeenCalled();
         expect(res.status).toEqual(HttpStatusCodes.CREATED);
         expect(res.body.message).toContain(`Please check your email '${userEmail}' for the activation link`);
+      });
+    });
+
+    describe('error', () => {
+      it('should return validation error messages if required fields are missing', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/register').send({});
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "name" field is required');
+        expect(res.body.data[1]).toHaveProperty('message', 'The "email" field is required');
+        expect(res.body.data[2]).toHaveProperty('message', 'The "password" field is required');
+        expect(res.body.data[3]).toHaveProperty('message', 'The "passwordConfirmation" field is required');
+      });
+
+      it('should return a validation error message if the email is not valid', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/register').send({
+          name: userName,
+          email: 'invalid',
+          password: userPassword,
+          passwordConfirmation: userPassword,
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "email" field should be a valid email');
+      });
+
+      it('should return a validation error message if the password is less than 6 characters', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/register').send({
+          name: userName,
+          email: userEmail,
+          password: 'short',
+          passwordConfirmation: userPassword,
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "password" field should have a minimum length of 6 characters');
+      });
+
+      it('should return a validation error message if the password confirmation is not the same as the password', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/register').send({
+          name: userName,
+          email: userEmail,
+          password: userPassword,
+          passwordConfirmation: 'mismatch',
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "passwordConfirmation" field should match the password field');
+      });
+
+      it('should return an error message if a user with the email already exists', async () => {
+        Container.set(AuthService, {
+          registerUser: jest.fn().mockRejectedValueOnce(new ForbiddenError(`User with email '${userEmail}' already exists.`)),
+        });
+
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/register').send({
+          name: userName,
+          email: userEmail,
+          password: userPassword,
+          passwordConfirmation: userPassword,
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.FORBIDDEN);
+        expect(res.body.message).toContain(`User with email '${userEmail}' already exists.`);
       });
     });
   });
