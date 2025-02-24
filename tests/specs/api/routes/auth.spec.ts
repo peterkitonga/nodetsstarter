@@ -1,11 +1,13 @@
 import request from 'supertest';
 import { Container } from 'typedi';
 import { Cookie, CookieAccessInfo } from 'cookiejar';
+import jwt from 'jsonwebtoken';
 
 import configs from '@src/configs';
 import ExpressApp from '@src/core/express';
 import AuthService from '@src/services/auth';
 import MailerService from '@src/services/mailer';
+import SaltRepository from '@src/repositories/salt';
 import { HttpStatusCodes } from '@src/shared/enums';
 import ForbiddenError from '@src/shared/errors/forbidden';
 import NotFoundError from '@src/shared/errors/not-found';
@@ -28,6 +30,7 @@ describe('src/api/routes/auth', () => {
 
   const dateToday = new Date();
   const userName = 'John Doe';
+  const userObjectId = '12345678910';
   const userEmail = 'john.doe@test.com';
   const userPassword = 'SUPER_SECRET_PASSWORD';
   const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
@@ -392,7 +395,7 @@ describe('src/api/routes/auth', () => {
         expect(res.body.data[0]).toHaveProperty('message', 'The "email" field is required');
       });
 
-      it('should return validation error messages if required fields are missing', async () => {
+      it('should return validation error if the email is invalid', async () => {
         const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/reset/link').send({
           email: 'invalid',
         });
@@ -434,6 +437,159 @@ describe('src/api/routes/auth', () => {
 
         expect(res.status).toEqual(HttpStatusCodes.INTERNAL_SERVER);
         expect(res.body.message).toContain('SAMPLE_MAIL_ERROR');
+      });
+    });
+  });
+
+  describe('POST /{API PREFIX}/auth/reset/password', () => {
+    describe('success', () => {
+      it('should update password using the passed password', async () => {
+        const mockResetPassword = jest.fn().mockResolvedValueOnce({
+          data: {
+            email: userEmail,
+          },
+        });
+
+        Container.set(AuthService, {
+          resetPassword: mockResetPassword,
+        });
+
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/reset/password').send({
+          token: resetToken,
+          password: userPassword,
+          passwordConfirmation: userPassword,
+        });
+
+        expect(mockResetPassword).toHaveBeenCalled();
+        expect(mockResetPassword.mock.calls[0][0]).toHaveProperty('password', userPassword);
+        expect(res.status).toEqual(HttpStatusCodes.OK);
+        expect(res.body.message).toContain(`Password for '${userEmail}' has been reset successfully.`);
+      });
+    });
+
+    describe('error', () => {
+      it('should return validation error messages if required fields are missing', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/reset/password').send({});
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "token" field is required');
+        expect(res.body.data[1]).toHaveProperty('message', 'The "password" field is required');
+        expect(res.body.data[2]).toHaveProperty('message', 'The "passwordConfirmation" field is required');
+      });
+
+      it('should return a validation error message if the password is less than 6 characters', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/reset/password').send({
+          token: resetToken,
+          password: 'short',
+          passwordConfirmation: userPassword,
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "password" field should have a minimum length of 6 characters');
+      });
+
+      it('should return a validation error message if the password confirmation is not the same as the password', async () => {
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/reset/password').send({
+          token: resetToken,
+          password: userPassword,
+          passwordConfirmation: 'mismatch',
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "passwordConfirmation" field should match the password field');
+      });
+
+      it('should return error message if reset token is not found', async () => {
+        Container.set(AuthService, {
+          resetPassword: jest.fn().mockRejectedValueOnce(new NotFoundError(`Password reset token '${resetToken}' does not exist.`)),
+        });
+
+        const res = await request(ExpressAppInstance['app']).post('/api/v2/auth/reset/password').send({
+          token: resetToken,
+          password: userPassword,
+          passwordConfirmation: userPassword,
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.NOT_FOUND);
+        expect(res.body.message).toContain(`Password reset token '${resetToken}' does not exist.`);
+      });
+    });
+  });
+
+  describe('POST /{API PREFIX}/auth/refresh/token', () => {
+    describe('success', () => {
+      it('should return new token and add refresh token cookie', async () => {
+        const mockRefreshToken = jest.fn().mockResolvedValueOnce({
+          data: {
+            token: jwtToken,
+            refreshToken: jwtToken,
+            lifetime: '3600',
+          },
+        });
+
+        Container.set(AuthService, {
+          refreshToken: mockRefreshToken,
+        });
+
+        const res = await request(ExpressAppInstance['app'])
+          .get('/api/v2/auth/refresh/token')
+          .set('Cookie', [`refreshToken=${jwtToken}`]);
+
+        expect(mockRefreshToken).toHaveBeenCalled();
+        expect(mockRefreshToken.mock.calls[0][0]).toEqual(jwtToken);
+        expect(res.status).toEqual(HttpStatusCodes.CREATED);
+        expect(res.body.data).toHaveProperty('token', jwtToken);
+        expect(res.headers['set-cookie'][0]).toContain(`refreshToken=${jwtToken}`);
+      });
+    });
+
+    describe('error', () => {
+      it('should return error if the refresh token cookie is missing', async () => {
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/refresh/token');
+
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toContain('Authentication failed. Please login.');
+      });
+    });
+  });
+
+  describe('GET /{API PREFIX}/auth/user', () => {
+    describe('success', () => {
+      it('should return user with the given id in the authorization token', async () => {
+        const mockGetUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+        const mockSaltIsValid = jest.fn().mockResolvedValueOnce({
+          _id: '111213141516',
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: mockSaltIsValid,
+        });
+        Container.set(AuthService, {
+          getUser: mockGetUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+        expect(mockGetUser).toHaveBeenCalled();
+        expect(mockSaltIsValid).toHaveBeenCalled();
+        expect(mockGetUser.mock.calls[0][0]).toEqual(userObjectId);
+        expect(mockSaltIsValid.mock.calls[0][0]).toEqual(salt);
+        expect(res.status).toEqual(HttpStatusCodes.OK);
+        expect(res.body.data).toHaveProperty('name', userName);
+        expect(res.body.data).toHaveProperty('email', userEmail);
+        expect(res.body.data).toHaveProperty('avatar', 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1');
       });
     });
   });

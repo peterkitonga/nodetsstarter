@@ -83,7 +83,7 @@ export default class AuthValidator extends BaseValidator {
         .options({ allowUnknown: true, abortEarly: false })
         .keys({
           token: this.stringValidationSchema('token').required(),
-          password: this.stringValidationSchema('password', 6),
+          password: this.stringValidationSchema('password', 6).required(),
           passwordConfirmation: this.confirmValidationSchema('passwordConfirmation', 'password').required(),
         });
 
