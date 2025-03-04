@@ -1,7 +1,9 @@
 import request from 'supertest';
 import { Container } from 'typedi';
 import { Cookie, CookieAccessInfo } from 'cookiejar';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import { readFileSync } from 'fs';
+import path from 'path';
 
 import configs from '@src/configs';
 import ExpressApp from '@src/core/express';
@@ -34,8 +36,9 @@ describe('src/api/routes/auth', () => {
   const userEmail = 'john.doe@test.com';
   const userPassword = 'SUPER_SECRET_PASSWORD';
   const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
+  const rawTokenData = readFileSync(path.resolve(__dirname, '../../../dummy-token.json'), 'utf-8');
   const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
-  const jwtToken = 'jau4oV3edeenodees0ohquaighoghei0eeNgae8xeiki0tu8jaeY9qua0heem1EishiP9chee4thoo2dieNguuneeroo6cha';
+  const jwtToken = JSON.parse(rawTokenData).token as string;
   const ExpressAppInstance = Container.get(ExpressApp);
 
   ExpressAppInstance.setupBodyParser();
@@ -558,7 +561,7 @@ describe('src/api/routes/auth', () => {
 
   describe('GET /{API PREFIX}/auth/user', () => {
     describe('success', () => {
-      it('should return user with the given id in the authorization token', async () => {
+      it('should return user for the given authorization token', async () => {
         const mockGetUser = jest.fn().mockResolvedValueOnce({
           data: {
             name: userName,
@@ -590,6 +593,138 @@ describe('src/api/routes/auth', () => {
         expect(res.body.data).toHaveProperty('name', userName);
         expect(res.body.data).toHaveProperty('email', userEmail);
         expect(res.body.data).toHaveProperty('avatar', 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1');
+      });
+    });
+
+    describe('error', () => {
+      it('should return error message when authorization header is missing', async () => {
+        const mockGetUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+        const mockSaltIsValid = jest.fn().mockResolvedValueOnce({
+          _id: '111213141516',
+        });
+        const mockJwtVerify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+
+        jwt.verify = mockJwtVerify;
+        Container.set(SaltRepository, {
+          isValid: mockSaltIsValid,
+        });
+        Container.set(AuthService, {
+          getUser: mockGetUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/user');
+
+        expect(mockGetUser).not.toHaveBeenCalled();
+        expect(mockJwtVerify).not.toHaveBeenCalled();
+        expect(mockSaltIsValid).not.toHaveBeenCalled();
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toEqual('Unauthorized. Bearer token is required for authentication.');
+      });
+
+      it('should return error message when the authorization bearer token is invalid', async () => {
+        const mockGetUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+        const mockSaltIsValid = jest.fn().mockResolvedValueOnce({
+          _id: '111213141516',
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce('');
+        Container.set(SaltRepository, {
+          isValid: mockSaltIsValid,
+        });
+        Container.set(AuthService, {
+          getUser: mockGetUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+        expect(mockGetUser).not.toHaveBeenCalled();
+        expect(mockSaltIsValid).not.toHaveBeenCalled();
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toEqual('Authentication failed. Please login.');
+      });
+
+      it('should return error message when the salt in the authorization bearer token is invalid', async () => {
+        const mockGetUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce(null),
+        });
+        Container.set(AuthService, {
+          getUser: mockGetUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+        expect(mockGetUser).not.toHaveBeenCalled();
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toEqual('Authentication failed. Please login.');
+      });
+
+      it('should return error message when the authorization bearer token has expired', async () => {
+        const mockGetUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+
+        jwt.verify = jest.fn().mockImplementation(() => {
+          throw new TokenExpiredError('EXPIRED', new Date());
+        });
+        Container.set(AuthService, {
+          getUser: mockGetUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+        expect(mockGetUser).not.toHaveBeenCalled();
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toEqual('Unauthorized. Bearer token is expired.');
+      });
+
+      it('should catch errors when fetching user details', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(AuthService, {
+          getUser: jest.fn().mockRejectedValueOnce(new Error('SAMPLE_ERROR_MESSAGE')),
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`);
+
+        expect(res.status).toEqual(HttpStatusCodes.INTERNAL_SERVER);
+        expect(res.body.message).toEqual('SAMPLE_ERROR_MESSAGE');
       });
     });
   });
