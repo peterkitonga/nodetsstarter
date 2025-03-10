@@ -38,6 +38,7 @@ describe('src/api/routes/auth', () => {
   const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
   const rawTokenData = readFileSync(path.resolve(__dirname, '../../../dummy-token.json'), 'utf-8');
   const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
+  const jwtRefreshToken = JSON.parse(rawTokenData).refreshToken as string;
   const jwtToken = JSON.parse(rawTokenData).token as string;
   const ExpressAppInstance = Container.get(ExpressApp);
 
@@ -528,7 +529,7 @@ describe('src/api/routes/auth', () => {
         const mockRefreshToken = jest.fn().mockResolvedValueOnce({
           data: {
             token: jwtToken,
-            refreshToken: jwtToken,
+            refreshToken: jwtRefreshToken,
             lifetime: '3600',
           },
         });
@@ -539,13 +540,13 @@ describe('src/api/routes/auth', () => {
 
         const res = await request(ExpressAppInstance['app'])
           .get('/api/v2/auth/refresh/token')
-          .set('Cookie', [`refreshToken=${jwtToken}`]);
+          .set('Cookie', [`refreshToken=${jwtRefreshToken}`]);
 
         expect(mockRefreshToken).toHaveBeenCalled();
-        expect(mockRefreshToken.mock.calls[0][0]).toEqual(jwtToken);
+        expect(mockRefreshToken.mock.calls[0][0]).toEqual(jwtRefreshToken);
         expect(res.status).toEqual(HttpStatusCodes.CREATED);
         expect(res.body.data).toHaveProperty('token', jwtToken);
-        expect(res.headers['set-cookie'][0]).toContain(`refreshToken=${jwtToken}`);
+        expect(res.headers['set-cookie'][0]).toContain(`refreshToken=${jwtRefreshToken}`);
       });
     });
 
