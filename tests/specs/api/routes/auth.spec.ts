@@ -15,6 +15,7 @@ import ForbiddenError from '@src/shared/errors/forbidden';
 import NotFoundError from '@src/shared/errors/not-found';
 import MongooseConnect from '@src/core/mongoose';
 import WinstonLogger from '@src/core/winston';
+import FileStorageService from '@src/services/file';
 
 describe('src/api/routes/auth', () => {
   configs.app.api.version = 'v2';
@@ -36,6 +37,7 @@ describe('src/api/routes/auth', () => {
   const userEmail = 'john.doe@test.com';
   const userPassword = 'SUPER_SECRET_PASSWORD';
   const salt = 'kai2gie6Hie7ux7aiGoo4utoh3aegot0phai0Tiavohlei7P';
+  const userAvatarUrl = `https://fakeimg.pl/440x440/282828/eae0d0/?retina=1`;
   const rawTokenData = readFileSync(path.resolve(__dirname, '../../../dummy-token.json'), 'utf-8');
   const resetToken = 'agai8ais4ufeiXeighaih9eibaSah6niweiqueighu0ieVaiquahceithaiph4oo';
   const jwtRefreshToken = JSON.parse(rawTokenData).refreshToken as string;
@@ -562,12 +564,12 @@ describe('src/api/routes/auth', () => {
 
   describe('GET /{API PREFIX}/auth/user', () => {
     describe('success', () => {
-      it('should return user for the given authorization token', async () => {
+      it('should return the user of the given authorization token', async () => {
         const mockGetUser = jest.fn().mockResolvedValueOnce({
           data: {
             name: userName,
             email: userEmail,
-            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            avatar: userAvatarUrl,
             createdAt: new Date().toISOString(),
             isActivated: true,
           },
@@ -593,7 +595,7 @@ describe('src/api/routes/auth', () => {
         expect(res.status).toEqual(HttpStatusCodes.OK);
         expect(res.body.data).toHaveProperty('name', userName);
         expect(res.body.data).toHaveProperty('email', userEmail);
-        expect(res.body.data).toHaveProperty('avatar', 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1');
+        expect(res.body.data).toHaveProperty('avatar', userAvatarUrl);
       });
     });
 
@@ -603,7 +605,7 @@ describe('src/api/routes/auth', () => {
           data: {
             name: userName,
             email: userEmail,
-            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            avatar: userAvatarUrl,
             createdAt: new Date().toISOString(),
             isActivated: true,
           },
@@ -635,7 +637,7 @@ describe('src/api/routes/auth', () => {
           data: {
             name: userName,
             email: userEmail,
-            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            avatar: userAvatarUrl,
             createdAt: new Date().toISOString(),
             isActivated: true,
           },
@@ -665,7 +667,7 @@ describe('src/api/routes/auth', () => {
           data: {
             name: userName,
             email: userEmail,
-            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            avatar: userAvatarUrl,
             createdAt: new Date().toISOString(),
             isActivated: true,
           },
@@ -691,7 +693,7 @@ describe('src/api/routes/auth', () => {
           data: {
             name: userName,
             email: userEmail,
-            avatar: 'https://fakeimg.pl/440x440/282828/eae0d0/?retina=1',
+            avatar: userAvatarUrl,
             createdAt: new Date().toISOString(),
             isActivated: true,
           },
@@ -726,6 +728,177 @@ describe('src/api/routes/auth', () => {
 
         expect(res.status).toEqual(HttpStatusCodes.INTERNAL_SERVER);
         expect(res.body.message).toEqual('SAMPLE_ERROR_MESSAGE');
+      });
+    });
+  });
+
+  describe('PUT /{API PREFIX}/auth/user', () => {
+    describe('success', () => {
+      it('should update & return the user of the given authorization token', async () => {
+        const mockUpdateUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: userAvatarUrl,
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(AuthService, {
+          updateUser: mockUpdateUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`).send({
+          name: userName,
+          email: userEmail,
+        });
+
+        expect(mockUpdateUser).toHaveBeenCalled();
+        expect(mockUpdateUser.mock.calls[0][0]).toEqual(userObjectId);
+        expect(res.status).toEqual(HttpStatusCodes.OK);
+        expect(res.body.data).toHaveProperty('name', userName);
+        expect(res.body.data).toHaveProperty('email', userEmail);
+        expect(res.body.data).toHaveProperty('avatar', userAvatarUrl);
+      });
+    });
+
+    describe('error', () => {
+      it('should return error message when authorization header is missing', async () => {
+        const mockUpdateUser = jest.fn();
+
+        Container.set(AuthService, {
+          updateUser: mockUpdateUser,
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user').send({
+          name: userName,
+          email: userEmail,
+        });
+
+        expect(mockUpdateUser).not.toHaveBeenCalled();
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toEqual('Unauthorized. Bearer token is required for authentication.');
+      });
+
+      it('should return validation error messages if required fields are missing', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`).send({});
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "name" field is required');
+        expect(res.body.data[1]).toHaveProperty('message', 'The "email" field is required');
+      });
+
+      it('should return a validation error message if the email is not valid', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`).send({
+          name: userName,
+          email: 'invalid',
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "email" field should be a valid email');
+      });
+
+      it('should return error message when updating a user fails', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(AuthService, {
+          updateUser: jest.fn().mockRejectedValueOnce(new Error('SAMPLE_ERROR_MESSAGE')),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user').set('Authorization', `Bearer ${jwtToken}`).send({
+          name: userName,
+          email: userEmail,
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.INTERNAL_SERVER);
+        expect(res.body.message).toEqual('SAMPLE_ERROR_MESSAGE');
+      });
+    });
+  });
+
+  describe('PUT /{API PREFIX}/auth/user/avatar', () => {
+    const rawFileData = readFileSync(path.resolve(__dirname, '../../../dummy-file.json'), 'utf-8');
+    const fileData = JSON.parse(rawFileData);
+
+    describe('success', () => {
+      it('should delete, update & return the user avatar of the given authorization token', async () => {
+        const mockGetUser = jest.fn().mockResolvedValueOnce({
+          data: {
+            avatar: 'SAMPLE_OLD_AVATAR',
+          },
+        });
+        const mockUpdateAvatar = jest.fn().mockResolvedValueOnce({
+          data: {
+            name: userName,
+            email: userEmail,
+            avatar: userAvatarUrl,
+            createdAt: new Date().toISOString(),
+            isActivated: true,
+          },
+        });
+        const mockDeleteFile = jest.fn().mockResolvedValueOnce({
+          data: userAvatarUrl,
+        });
+        const mockStoreFile = jest.fn().mockResolvedValueOnce({
+          data: userAvatarUrl,
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(FileStorageService, {
+          deleteFile: mockDeleteFile,
+          storeFile: mockStoreFile,
+        });
+        Container.set(AuthService, {
+          getUser: mockGetUser,
+          updateAvatar: mockUpdateAvatar,
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/avatar').set('Authorization', `Bearer ${jwtToken}`).send({
+          file: fileData.image,
+        });
+
+        expect(mockGetUser).toHaveBeenCalled();
+        expect(mockGetUser.mock.calls[0][0]).toEqual(userObjectId);
+        expect(mockDeleteFile).toHaveBeenCalled();
+        expect(mockDeleteFile.mock.calls[0][0]).toEqual('SAMPLE_OLD_AVATAR');
+        expect(mockStoreFile).toHaveBeenCalled();
+        expect(mockStoreFile.mock.calls[0][0]).toEqual(fileData.image);
+        expect(mockUpdateAvatar).toHaveBeenCalled();
+        expect(mockUpdateAvatar.mock.calls[0][0].url).toEqual(userAvatarUrl);
+        expect(res.status).toEqual(HttpStatusCodes.OK);
+        expect(res.body.data).toHaveProperty('avatar', userAvatarUrl);
       });
     });
   });
