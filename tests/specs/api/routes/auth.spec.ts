@@ -1198,4 +1198,50 @@ describe('src/api/routes/auth', () => {
       });
     });
   });
+
+  describe('PUT /{API PREFIX}/auth/logout', () => {
+    describe('success', () => {
+      it('should the user password of the given authorization token', async () => {
+        const mockLogoutUser = jest.fn().mockResolvedValueOnce({
+          message: 'Successfully logged out.',
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(AuthService, {
+          logoutUser: mockLogoutUser,
+        });
+
+        const res = await request(ExpressAppInstance['app'])
+          .get('/api/v2/auth/logout')
+          .set('Authorization', `Bearer ${jwtToken}`)
+          .set('Cookie', [`refreshToken=${jwtRefreshToken}`]);
+
+        expect(mockLogoutUser).toHaveBeenCalled();
+        expect(mockLogoutUser.mock.calls[0][0]).toEqual({ salt, token: jwtRefreshToken });
+        expect(res.status).toEqual(HttpStatusCodes.OK);
+        expect(res.body.message).toEqual('Successfully logged out.');
+      });
+    });
+
+    describe('error', () => {
+      it('should return error if the refresh token cookie is missing', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+
+        const res = await request(ExpressAppInstance['app']).get('/api/v2/auth/logout').set('Authorization', `Bearer ${jwtToken}`);
+
+        expect(res.status).toEqual(HttpStatusCodes.FORBIDDEN);
+        expect(res.body.message).toContain('Logout failed. Refresh token missing.');
+      });
+    });
+  });
 });
