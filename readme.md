@@ -27,7 +27,7 @@
 - [x] Switch to JEST for unit tests
 - [x] Dependency injection for the service layer
 - [x] Containerized setup with docker-compose
-- [ ] Jest unit tests with full coverage
+- [x] Jest unit tests with full coverage
 - [ ] OpenAPI setup for api documentation
 
 ## Folder structure
