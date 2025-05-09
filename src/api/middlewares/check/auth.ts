@@ -1,4 +1,4 @@
-import { Service } from 'typedi';
+import { Container, Service } from 'typedi';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
@@ -9,7 +9,7 @@ import UnauthorizedError from '@src/shared/errors/unauthorized';
 
 @Service()
 export default class AuthCheck {
-  public constructor(private saltRepository: SaltRepository) {
+  public constructor() {
     //
   }
 
@@ -25,7 +25,7 @@ export default class AuthCheck {
 
         if (isDecodedToken) {
           const decodedToken = <{ auth: string; salt: string }>isDecodedToken;
-          const isValidToken = await this.saltRepository.isValid(decodedToken.salt);
+          const isValidToken = await Container.get(SaltRepository).isValid(decodedToken.salt);
 
           if (isValidToken) {
             req.auth = decodedToken.auth;
