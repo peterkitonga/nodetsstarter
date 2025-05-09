@@ -1077,4 +1077,125 @@ describe('src/api/routes/auth', () => {
       });
     });
   });
+
+  describe('PUT /{API PREFIX}/auth/user/password', () => {
+    describe('success', () => {
+      it('should the user password of the given authorization token', async () => {
+        const mockUpdatePassword = jest.fn().mockResolvedValueOnce({
+          message: 'Successfully updated password.',
+        });
+
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(AuthService, {
+          updatePassword: mockUpdatePassword,
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/password').set('Authorization', `Bearer ${jwtToken}`).send({
+          password: 'NEW_PASSWORD',
+          passwordConfirmation: 'NEW_PASSWORD',
+        });
+
+        expect(mockUpdatePassword).toHaveBeenCalled();
+        expect(mockUpdatePassword.mock.calls[0][0]).toEqual({ userId: userObjectId, password: 'NEW_PASSWORD' });
+        expect(res.status).toEqual(HttpStatusCodes.OK);
+        expect(res.body.message).toEqual('Successfully updated password.');
+      });
+    });
+
+    describe('error', () => {
+      it('should return error message when authorization header is missing', async () => {
+        const mockUpdatePassword = jest.fn();
+
+        Container.set(AuthService, {
+          updatePassword: mockUpdatePassword,
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/password').send({
+          password: 'NEW_PASSWORD',
+          passwordConfirmation: 'NEW_PASSWORD',
+        });
+
+        expect(mockUpdatePassword).not.toHaveBeenCalled();
+        expect(res.status).toEqual(HttpStatusCodes.UNAUTHORIZED);
+        expect(res.body.message).toEqual('Unauthorized. Bearer token is required for authentication.');
+      });
+
+      it('should return validation error messages if required fields are missing', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/password').set('Authorization', `Bearer ${jwtToken}`).send({});
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "password" field is required');
+        expect(res.body.data[1]).toHaveProperty('message', 'The "passwordConfirmation" field is required');
+      });
+
+      it('should return a validation error message if the password is less than 6 characters', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/password').set('Authorization', `Bearer ${jwtToken}`).send({
+          password: 'short',
+          passwordConfirmation: 'NEW_PASSWORD',
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "password" field should have a minimum length of 6 characters');
+      });
+
+      it('should return a validation error message if the password confirmation is not the same as the password', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/password').set('Authorization', `Bearer ${jwtToken}`).send({
+          password: 'NEW_PASSWORD',
+          passwordConfirmation: 'mismatch',
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.message).toContain('There are validation errors in your request.');
+        expect(res.body.data[0]).toHaveProperty('message', 'The "passwordConfirmation" field should match the password field');
+      });
+
+      it('should return an error message if updating the password fails', async () => {
+        jwt.verify = jest.fn().mockReturnValueOnce({ salt, auth: userObjectId });
+        Container.set(SaltRepository, {
+          isValid: jest.fn().mockResolvedValueOnce({
+            _id: '111213141516',
+          }),
+        });
+        Container.set(AuthService, {
+          updatePassword: jest.fn().mockRejectedValueOnce(new Error('SAMPLE_PASSWORD_ERROR_MESSAGE')),
+        });
+
+        const res = await request(ExpressAppInstance['app']).put('/api/v2/auth/user/password').set('Authorization', `Bearer ${jwtToken}`).send({
+          password: 'NEW_PASSWORD',
+          passwordConfirmation: 'NEW_PASSWORD',
+        });
+
+        expect(res.status).toEqual(HttpStatusCodes.INTERNAL_SERVER);
+        expect(res.body.message).toEqual('SAMPLE_PASSWORD_ERROR_MESSAGE');
+      });
+    });
+  });
 });
